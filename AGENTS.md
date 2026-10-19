@@ -27,5 +27,6 @@ Prints `BUILD OK` or the first failure lines. Full log `%TEMP%\gradle-last.log` 
 - Compact width (folded Fold 7, S24 Ultra): sections stacked in one scroll. Expanded/medium (unfolded): two columns.
 
 ## Delegation (token budget)
-- Builds/tests -> `gradle-runner` (Haiku). Screenshot review -> `screenshot-reviewer` (Haiku). Search -> `Explore` (Haiku). Implementation -> `android-implementer` (Sonnet). Planning in main conversation (`opusplan`).
+- Builds/tests -> `gradle-runner` (Haiku). Screenshot review -> `screenshot-reviewer` (Haiku). Search -> `Explore` (Haiku). Headless work: Opus plans/reviews (`claude -p --model opus`, read-only); Sonnet implements each plan step in a fresh `claude -p --model sonnet` session (at most ~30 turns); no Sonnet helper subagents.
+- **Hard limits: `docs/token-budget.md`, "Hard limits (v2)"** (line-range reads, builds outside Claude, pre-generated diff for review, `/usage` after every run, under 8 session points per medium feature).
 - The main conversation never reads PNGs, full Gradle logs or `build/` files.
