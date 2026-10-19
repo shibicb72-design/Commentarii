@@ -20,6 +20,18 @@ The Claude Code config in `.claude/` (opusplan, Haiku/Sonnet subagents, read-den
   setup: it has open Windows bugs, and routing a subscription (OAuth) session through it is a
   Terms-of-Service grey area.
 
+## Headless pipeline (since Oct 18 2026)
+In `claude -p`, `opusplan` falls back to Sonnet, so Opus is invoked explicitly per step
+(script: `C:\Users\shibi\cc_commentarii\pipeline.ps1 -Name <ticket> -TaskFile <file> -Repo <path>`):
+1. PLAN `claude -p --model opus` (tools Read/Grep/Glob/Task/Write): reads AGENTS.md, uses Haiku `Explore`, writes `docs/plans/<ticket>.md` (<= 80 lines). No code.
+2. IMPLEMENT `claude -p --model sonnet`: implements the plan itself (no extra android-implementer hop, saves one context load); builds via Haiku `gradle-runner`, screenshots via Haiku `screenshot-reviewer`.
+3. REVIEW `claude -p --model opus`: reads the diff vs the plan, writes `docs/plans/<ticket>-review.md` (fix list or `NO FIXES`). No edits.
+4. FIX `claude -p --model sonnet` only if the review lists fixes.
+After every run: `claude -p "/usage"` (free) and record session/week % plus per-model cost (from `--output-format json` `modelUsage`) in METRICS.md.
+All subagents run in the foreground; headless stops background subagents after 10 min (`CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0` to wait).
+
+- Large features: split IMPLEMENT into 2-3 fresh Sonnet runs (data/domain, UI, tests/screenshots). One 99-turn run re-read 12.5M cache tokens (v2, Oct 19 2026).
+
 ## Hard limits (v2)
 Why: on Oct 18-19 2026 one medium feature (Theatrum V23, player gestures) used **+26 session points**
 ($10.09). Output was small (at most 79k tokens per run). Nearly all of the cost was **cache reads**: every
