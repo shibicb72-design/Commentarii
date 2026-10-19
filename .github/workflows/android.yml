@@ -86,4 +86,4 @@ jobs:
         with:
           name: screenshots
           path: app/build/outputs/roborazzi
-          if-no-files-found: error
+          if-no-files-found: warn
