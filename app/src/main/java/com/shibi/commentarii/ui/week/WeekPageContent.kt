@@ -58,7 +58,6 @@ fun WeekPageContent(
                             GoalsCard(state.goals, actions.goals, maxItems = WeekViewModel.GOAL_SLOTS, enabled = state.loaded)
                             TodoCard(state.todo, actions.todo, enabled = state.loaded)
                             DontForgetCard(state.dontForget, actions.dontForget, enabled = state.loaded)
-                            WeekHabitCard(days, state.habits, actions.onToggleHabit, enabled = state.loaded)
                             WeekMoodCard(days, state.moods, actions.onOpenDay)
                         }
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -74,7 +73,6 @@ fun WeekPageContent(
                 item { WeekDaysCard(state.days, state.today, actions.onOpenDay) }
                 item { TodoCard(state.todo, actions.todo, enabled = state.loaded) }
                 item { DontForgetCard(state.dontForget, actions.dontForget, enabled = state.loaded) }
-                item { WeekHabitCard(days, state.habits, actions.onToggleHabit, enabled = state.loaded) }
                 item { WeekMoodCard(days, state.moods, actions.onOpenDay) }
                 item { NotesCard(state.notes, actions.onNotes, enabled = state.loaded) }
                 item { ReviewCard(stringResource(R.string.section_review_well), state.reviewWell, actions.onReviewWell, enabled = state.loaded) }

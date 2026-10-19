@@ -24,16 +24,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -59,9 +53,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.shibi.commentarii.AppContainer
 import com.shibi.commentarii.R
 import com.shibi.commentarii.data.DarkMode
-import com.shibi.commentarii.ui.daily.AddRowButton
 import com.shibi.commentarii.ui.daily.SectionCard
-import com.shibi.commentarii.ui.daily.SmallIconButton
 
 private const val LICENSE_ASSET = "licenses/DancingScript-OFL.txt"
 
@@ -299,9 +291,6 @@ fun SettingsContent(state: SettingsUiState, callbacks: SettingsCallbacks, modifi
                     }
                 }
             }
-            SectionCard(stringResource(R.string.section_self_care)) {
-                SelfCareEditor(state.selfCare, callbacks)
-            }
             SectionCard(stringResource(R.string.settings_debugging)) {
                 OutlinedButton(
                     onClick = callbacks.onOpenDebug,
@@ -344,82 +333,6 @@ private fun SwitchRow(title: String, hint: String, checked: Boolean, onChange: (
         }
         Switch(checked = checked, onCheckedChange = onChange)
     }
-}
-
-@Composable
-private fun SelfCareEditor(items: List<SelfCareEditUi>, callbacks: SettingsCallbacks) {
-    var renaming by remember { mutableStateOf<SelfCareEditUi?>(null) }
-    var adding by rememberSaveable { mutableStateOf(false) }
-    items.forEachIndexed { i, item ->
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text(item.name, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
-            SmallIconButton(
-                Icons.Filled.KeyboardArrowUp,
-                stringResource(R.string.daily_move_up),
-                { callbacks.onMoveSelfCare(item.id, -1) },
-                enabled = i > 0,
-            )
-            SmallIconButton(
-                Icons.Filled.KeyboardArrowDown,
-                stringResource(R.string.daily_move_down),
-                { callbacks.onMoveSelfCare(item.id, 1) },
-                enabled = i < items.lastIndex,
-            )
-            SmallIconButton(Icons.Filled.Edit, stringResource(R.string.daily_rename), { renaming = item })
-            SmallIconButton(
-                Icons.Filled.Delete,
-                stringResource(R.string.daily_remove),
-                { callbacks.onRemoveSelfCare(item.id) },
-            )
-        }
-    }
-    AddRowButton(stringResource(R.string.settings_add_self_care), { adding = true })
-
-    renaming?.let { item ->
-        NameDialog(
-            title = stringResource(R.string.daily_rename),
-            initial = item.name,
-            onConfirm = {
-                callbacks.onRenameSelfCare(item.id, it)
-                renaming = null
-            },
-            onDismiss = { renaming = null },
-        )
-    }
-    if (adding) {
-        NameDialog(
-            title = stringResource(R.string.settings_add_self_care),
-            initial = "",
-            onConfirm = {
-                callbacks.onAddSelfCare(it)
-                adding = false
-            },
-            onDismiss = { adding = false },
-        )
-    }
-}
-
-@Composable
-private fun NameDialog(title: String, initial: String, onConfirm: (String) -> Unit, onDismiss: () -> Unit) {
-    var text by remember { mutableStateOf(initial) }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(title) },
-        text = {
-            OutlinedTextField(
-                value = text,
-                onValueChange = { text = it },
-                singleLine = true,
-                label = { Text(stringResource(R.string.daily_name_hint)) },
-            )
-        },
-        confirmButton = {
-            TextButton(onClick = { onConfirm(text) }, enabled = text.isNotBlank()) {
-                Text(stringResource(R.string.action_ok))
-            }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
-    )
 }
 
 @Composable

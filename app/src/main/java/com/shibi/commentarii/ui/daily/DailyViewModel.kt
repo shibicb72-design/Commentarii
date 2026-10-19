@@ -16,7 +16,6 @@ import com.shibi.commentarii.domain.RolloverSession
 import com.shibi.commentarii.domain.applyRollover
 import com.shibi.commentarii.domain.computeRollover
 import com.shibi.commentarii.domain.shouldShowExportReminder
-import com.shibi.commentarii.domain.streaksFor
 import com.shibi.commentarii.domain.weekStart
 import java.time.LocalDate
 import java.time.YearMonth
@@ -52,7 +51,6 @@ class DailyViewModel(
     val date: LocalDate,
 ) : ViewModel() {
     private val pages = container.pages
-    private val selfCare = container.selfCare
 
     private val _state = MutableStateFlow(DailyUiState(date = date, today = LocalDate.now(container.clock)))
     val state: StateFlow<DailyUiState> = _state.asStateFlow()
@@ -143,7 +141,6 @@ class DailyViewModel(
                 priorities = pad(tasks[TaskSection.PRIORITY].orEmpty().map(::toUi), PRIORITY_SLOTS),
                 todo = pad(tasks[TaskSection.TODO].orEmpty().map(::toUi), MIN_TODO),
                 dontForget = pad(tasks[TaskSection.DONT_FORGET].orEmpty().map(::toUi), MIN_DONT_FORGET),
-                grateful = pad(tasks[TaskSection.GRATEFUL].orEmpty().map(::toUi), MIN_GRATEFUL),
                 schedule = schedule.map {
                     ScheduleRowUi(nextKey(), it.minuteOfDay, it.text, it.isCustom, it.id)
                 }.sortedSchedule(),
@@ -166,22 +163,6 @@ class DailyViewModel(
         viewModelScope.launch {
             pages.observeTagsForPage(page.id).collect { list ->
                 _state.update { it.copy(tags = list.map { t -> ChipUi(t.id, t.name) }) }
-            }
-        }
-        viewModelScope.launch {
-            combine(
-                selfCare.observeItems(),
-                selfCare.observeChecks(date.minusDays(STREAK_WINDOW_DAYS), date),
-            ) { items, checks -> items to checks }.collect { (items, checks) ->
-                val streaks = streaksFor(items, checks, date)
-                val checkedToday = checks.filter { it.date == date }.map { it.itemId }.toSet()
-                _state.update { st ->
-                    st.copy(
-                        selfCare = items.map {
-                            SelfCareUi(it.id, it.name, it.id in checkedToday, streaks[it.id] ?: 0)
-                        },
-                    )
-                }
             }
         }
         viewModelScope.launch {
@@ -268,7 +249,6 @@ class DailyViewModel(
         priorities = taskActions(TaskSection.PRIORITY, PRIORITY_SLOTS, fixedRows = true),
         todo = taskActions(TaskSection.TODO, MIN_TODO),
         dontForget = taskActions(TaskSection.DONT_FORGET, MIN_DONT_FORGET),
-        grateful = taskActions(TaskSection.GRATEFUL, MIN_GRATEFUL),
         onScheduleText = { key, text ->
             editSchedule { l -> l.map { if (it.key == key) it.copy(text = text) else it } }
         },
@@ -276,14 +256,6 @@ class DailyViewModel(
             editSchedule { it + ScheduleRowUi(key = nextKey(), minuteOfDay = minute, isCustom = true) }
         },
         onRemoveCustomTime = { key -> editSchedule { l -> l.filterNot { it.key == key && it.isCustom } } },
-        onToggleSelfCare = { id -> viewModelScope.launch { selfCare.toggleCheck(id, date) } },
-        onAddSelfCare = { name ->
-            if (name.isNotBlank()) viewModelScope.launch { selfCare.addItem(name) }
-        },
-        onRenameSelfCare = { id, name ->
-            if (name.isNotBlank()) viewModelScope.launch { selfCare.renameItem(id, name) }
-        },
-        onRemoveSelfCare = { id -> viewModelScope.launch { selfCare.removeItem(id) } },
         onMood = { m ->
             viewModelScope.launch { pages.saveMood(date, if (_state.value.mood == m) null else m) }
         },
@@ -408,9 +380,7 @@ class DailyViewModel(
         const val PRIORITY_SLOTS = 3
         const val MIN_TODO = 3
         const val MIN_DONT_FORGET = 3
-        const val MIN_GRATEFUL = 5
         private const val DEBOUNCE_MS = 500L
-        private const val STREAK_WINDOW_DAYS = 365L
         private const val DIRTY_SCHEDULE = "SCHEDULE"
         private const val DIRTY_NOTES = "NOTES"
 

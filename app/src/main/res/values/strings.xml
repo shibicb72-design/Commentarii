@@ -23,8 +23,6 @@
     <string name="section_todo">To-Do List</string>
     <string name="section_schedule">Schedule</string>
     <string name="section_dont_forget">Don\'t Forget</string>
-    <string name="section_grateful">Today I Am Grateful For</string>
-    <string name="section_self_care">Self Care</string>
     <string name="section_mood">Today\'s Mood</string>
     <string name="section_notes">Notes</string>
     <string name="daily_footer">You\'ve got this!</string>
@@ -44,7 +42,6 @@
     <string name="daily_priority_hint">Priority %1$d</string>
     <string name="daily_todo_hint">To-do</string>
     <string name="daily_dont_forget_hint">Remember</string>
-    <string name="daily_grateful_hint">I am grateful for</string>
     <string name="daily_schedule_hint">Plan</string>
     <string name="daily_notes_hint">Write anything here</string>
     <string name="daily_add_item">Add item</string>
@@ -56,9 +53,6 @@
     <string name="daily_remove">Remove</string>
     <string name="daily_rename">Rename</string>
     <string name="daily_confirm">Confirm</string>
-    <string name="daily_self_care_hint">Self care habit</string>
-    <string name="daily_streak_badge">🔥%1$d</string>
-    <string name="daily_streak_description">%1$d day streak</string>
 
     <!-- Week and month pages -->
     <string name="week_title_fmt">Week of %1$s – %2$s</string>
@@ -84,9 +78,7 @@
     <string name="week_todo_fmt">%1$d/%2$d to-dos done</string>
     <string name="mood_none">No mood</string>
     <string name="month_day_has_entries">has entries</string>
-    <string name="habit_summary_fmt">%1$d/%2$d</string>
-    <string name="habit_summary_none">-</string>
-    <string name="habit_summary_empty">No habits yet. Add them on the daily page.</string>
+    <string name="mood_none_short">-</string>
     <string name="period_card_title">This week &amp; month</string>
     <string name="period_card_week">This week</string>
     <string name="period_card_month">This month</string>
@@ -164,7 +156,6 @@
     <string name="settings_theme_system">Follow system</string>
     <string name="settings_theme_light">Light</string>
     <string name="settings_theme_dark">Dark</string>
-    <string name="settings_add_self_care">Add self care item</string>
     <string name="settings_section_licences">Licences</string>
     <string name="settings_licence_font">Dancing Script font, SIL Open Font License 1.1.</string>
     <string name="settings_licence_show">Show licence text</string>

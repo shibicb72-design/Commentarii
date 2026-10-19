@@ -24,7 +24,6 @@ class SettingsViewModel(
     licenseText: String,
 ) : ViewModel() {
     private val settings = container.settings
-    private val selfCare = container.selfCare
     private val message = MutableStateFlow<SettingsMessage?>(null)
     private val exactGranted = MutableStateFlow(container.alarms.canScheduleExact())
 
@@ -33,14 +32,12 @@ class SettingsViewModel(
         settings.exportReminderEnabled,
         settings.lastExportAt,
         settings.darkMode,
-        selfCare.observeItems(),
-    ) { lock, reminder, last, dark, items ->
+    ) { lock, reminder, last, dark ->
         SettingsUiState(
             lockEnabled = lock,
             exportReminderEnabled = reminder,
             lastExportAt = last,
             darkMode = dark,
-            selfCare = items.map { SelfCareEditUi(it.id, it.name) },
             licenseText = licenseText,
         )
     }
@@ -95,14 +92,6 @@ class SettingsViewModel(
         onExport = onExport,
         onImport = onImport,
         onDarkMode = { m: DarkMode -> viewModelScope.launch { settings.setDarkMode(m) } },
-        onAddSelfCare = { name -> if (name.isNotBlank()) viewModelScope.launch { selfCare.addItem(name) } },
-        onRenameSelfCare = { id, name -> if (name.isNotBlank()) viewModelScope.launch { selfCare.renameItem(id, name) } },
-        onRemoveSelfCare = { id -> viewModelScope.launch { selfCare.removeItem(id) } },
-        onMoveSelfCare = { id, delta ->
-            val ids = state.value.selfCare.map { it.id }
-            val moved = movedIds(ids, id, delta)
-            if (moved != ids) viewModelScope.launch { selfCare.reorder(moved) }
-        },
     )
 
     fun exportTo(uri: Uri, resolver: ContentResolver) {

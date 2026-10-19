@@ -27,7 +27,7 @@ import java.util.Locale
 
 /**
  * Stateless monthly page. Compact width: one scrolling column of all sections.
- * Medium/Expanded: two columns (left: calendar and habits, right: goals, events, to-dos, notes and review).
+ * Medium/Expanded: two columns (left: calendar and review, right: goals, events, to-dos, notes and review).
  */
 @Composable
 fun MonthPageContent(
@@ -53,7 +53,6 @@ fun MonthPageContent(
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                             MonthCalendarCard(state.grid, state.today, actions.onOpenDay)
-                            HabitSummaryCard(state.habits)
                             ReviewCard(stringResource(R.string.section_review), state.review, actions.onReview, enabled = state.loaded)
                         }
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -69,7 +68,6 @@ fun MonthPageContent(
                 item { GoalsCard(state.goals, actions.goals, maxItems = null, enabled = state.loaded) }
                 item { EventsSection(state, actions) }
                 item { TodoCard(state.todo, actions.todo, enabled = state.loaded) }
-                item { HabitSummaryCard(state.habits) }
                 item { NotesCard(state.notes, actions.onNotes, enabled = state.loaded) }
                 item { ReviewCard(stringResource(R.string.section_review), state.review, actions.onReview, enabled = state.loaded) }
             }

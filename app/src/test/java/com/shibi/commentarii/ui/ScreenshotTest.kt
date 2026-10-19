@@ -15,8 +15,6 @@ import com.shibi.commentarii.data.DocBlock
 import com.shibi.commentarii.ui.daily.DailyActions
 import com.shibi.commentarii.ui.daily.DontForgetCard
 import com.shibi.commentarii.ui.daily.PeriodGoal
-import com.shibi.commentarii.ui.daily.SelfCareCard
-import com.shibi.commentarii.ui.daily.SelfCareUi
 import com.shibi.commentarii.ui.daily.TaskListActions
 import com.shibi.commentarii.ui.daily.TaskUi
 import com.shibi.commentarii.ui.daily.TodoCard
@@ -125,10 +123,6 @@ class ScreenshotTest {
             Box(Modifier.height(900.dp)) { NoteEditorContent(editor, NoteEditorActions()) }
             TodoCard(listOf(TaskUi(1, "Short task"), TaskUi(2, long)), TaskListActions())
             DontForgetCard(listOf(TaskUi(1, "Short item"), TaskUi(2, long)), TaskListActions())
-            SelfCareCard(
-                listOf(SelfCareUi(1, "Short habit", false, 0), SelfCareUi(2, long, true, 3)),
-                {}, {}, { _, _ -> }, {},
-            )
         }
     }
 }

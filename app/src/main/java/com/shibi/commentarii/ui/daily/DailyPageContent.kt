@@ -54,8 +54,6 @@ fun DailyPageContent(
                             PrioritiesCard(state.priorities, actions.priorities)
                             TodoCard(state.todo, actions.todo)
                             DontForgetCard(state.dontForget, actions.dontForget)
-                            GratefulCard(state.grateful, actions.grateful)
-                            SelfCare(state, actions)
                             MoodCard(state.mood, actions.onMood)
                         }
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -69,8 +67,6 @@ fun DailyPageContent(
                 item { TodoCard(state.todo, actions.todo) }
                 item { Schedule(state, actions) }
                 item { DontForgetCard(state.dontForget, actions.dontForget) }
-                item { GratefulCard(state.grateful, actions.grateful) }
-                item { SelfCare(state, actions) }
                 item { MoodCard(state.mood, actions.onMood) }
                 item { NotesCard(state.notes, actions.onNotes) }
             }
@@ -94,13 +90,4 @@ private fun Schedule(state: DailyUiState, actions: DailyActions) = ScheduleCard(
     onText = actions.onScheduleText,
     onAddCustomTime = actions.onAddCustomTime,
     onRemoveCustomTime = actions.onRemoveCustomTime,
-)
-
-@Composable
-private fun SelfCare(state: DailyUiState, actions: DailyActions) = SelfCareCard(
-    items = state.selfCare,
-    onToggle = actions.onToggleSelfCare,
-    onAdd = actions.onAddSelfCare,
-    onRename = actions.onRenameSelfCare,
-    onRemove = actions.onRemoveSelfCare,
 )

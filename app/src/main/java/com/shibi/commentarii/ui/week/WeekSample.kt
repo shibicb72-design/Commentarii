@@ -27,14 +27,9 @@ fun sampleWeekUiState(monday: LocalDate = LocalDate.of(2026, 10, 12)): WeekUiSta
         days = days.mapIndexed { i, d ->
             WeekDayUi(d, priorities[i], todoDone = todo[i].second, todoTotal = todo[i].first)
         },
-        habits = listOf(
-            WeekHabitUi(1, "Drink water", listOf(true, true, false, true, true, false, true)),
-            WeekHabitUi(2, "Stretch", listOf(false, true, false, false, true, false, false)),
-            WeekHabitUi(3, "Read 10 pages", listOf(true, true, true, false, true, true, false)),
-        ),
         moods = listOf(4, 3, 5, null, 2, 4, 1),
         notes = "Busy week. Remember to follow up on the invoice and plan the weekend trip.",
-        reviewWell = "Finished the report early and kept up the water habit.",
+        reviewWell = "Finished the report early and kept up the morning walks.",
         reviewImprove = "Start the weekly plan on Sunday evening instead of Monday morning.",
     )
 }

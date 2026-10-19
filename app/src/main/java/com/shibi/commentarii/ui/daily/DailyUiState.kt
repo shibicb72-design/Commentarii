@@ -20,8 +20,6 @@ data class ScheduleRowUi(
     val id: Long = 0,
 )
 
-data class SelfCareUi(val id: Long, val name: String, val checked: Boolean, val streak: Int)
-
 data class ChipUi(val id: Long, val name: String)
 
 /** A goal of the current week or month, shown read-only on the daily page. */
@@ -39,8 +37,6 @@ data class DailyUiState(
     val todo: List<TaskUi> = emptyList(),
     val schedule: List<ScheduleRowUi> = emptyList(),
     val dontForget: List<TaskUi> = emptyList(),
-    val grateful: List<TaskUi> = emptyList(),
-    val selfCare: List<SelfCareUi> = emptyList(),
     /** 1 (very sad) .. 5 (very happy), null when not chosen. */
     val mood: Int? = null,
     val notes: String = "",
@@ -50,15 +46,13 @@ data class DailyUiState(
     internal fun tasksOf(section: String): List<TaskUi> = when (section) {
         TaskSection.PRIORITY -> priorities
         TaskSection.TODO -> todo
-        TaskSection.DONT_FORGET -> dontForget
-        else -> grateful
+        else -> dontForget
     }
 
     internal fun withTasks(section: String, items: List<TaskUi>): DailyUiState = when (section) {
         TaskSection.PRIORITY -> copy(priorities = items)
         TaskSection.TODO -> copy(todo = items)
-        TaskSection.DONT_FORGET -> copy(dontForget = items)
-        else -> copy(grateful = items)
+        else -> copy(dontForget = items)
     }
 }
 
@@ -82,14 +76,9 @@ data class DailyActions(
     val priorities: TaskListActions = TaskListActions(),
     val todo: TaskListActions = TaskListActions(),
     val dontForget: TaskListActions = TaskListActions(),
-    val grateful: TaskListActions = TaskListActions(),
     val onScheduleText: (key: Long, text: String) -> Unit = { _, _ -> },
     val onAddCustomTime: (minuteOfDay: Int) -> Unit = {},
     val onRemoveCustomTime: (key: Long) -> Unit = {},
-    val onToggleSelfCare: (itemId: Long) -> Unit = {},
-    val onAddSelfCare: (name: String) -> Unit = {},
-    val onRenameSelfCare: (itemId: Long, name: String) -> Unit = { _, _ -> },
-    val onRemoveSelfCare: (itemId: Long) -> Unit = {},
     val onMood: (Int) -> Unit = {},
     val onNotes: (String) -> Unit = {},
     val onOpenWeek: () -> Unit = {},

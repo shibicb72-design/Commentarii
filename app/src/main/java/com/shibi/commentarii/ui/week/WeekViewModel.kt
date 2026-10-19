@@ -9,12 +9,9 @@ import com.shibi.commentarii.data.DailyTaskRow
 import com.shibi.commentarii.data.DocBlock
 import com.shibi.commentarii.data.MoodEntity
 import com.shibi.commentarii.data.SectionKind
-import com.shibi.commentarii.data.SelfCareCheckEntity
-import com.shibi.commentarii.data.SelfCareItemEntity
 import com.shibi.commentarii.data.TaskItemEntity
 import com.shibi.commentarii.data.TaskSection
 import com.shibi.commentarii.domain.weekDays
-import com.shibi.commentarii.domain.weekGrid
 import com.shibi.commentarii.ui.common.Autosaver
 import com.shibi.commentarii.ui.common.padTasks
 import com.shibi.commentarii.ui.common.saveTaskRows
@@ -34,7 +31,6 @@ class WeekViewModel(
     val monday: LocalDate,
 ) : ViewModel() {
     private val pages = container.pages
-    private val selfCare = container.selfCare
     private val days = weekDays(monday)
 
     private val _state = MutableStateFlow(
@@ -84,9 +80,7 @@ class WeekViewModel(
             combine(
                 pages.observeDailyTasks(monday, last),
                 pages.observeMoods(monday, last),
-                selfCare.observeItems(),
-                selfCare.observeChecks(monday, last),
-            ) { daily, moods, items, checks -> summarise(daily, moods, items, checks) }
+            ) { daily, moods -> summarise(daily, moods) }
                 .collect { summary -> _state.update { summary.applyTo(it) } }
         }
     }
@@ -97,17 +91,11 @@ class WeekViewModel(
     private class Summary(
         val days: List<WeekDayUi>,
         val moods: List<Int?>,
-        val habits: List<WeekHabitUi>,
     ) {
-        fun applyTo(st: WeekUiState) = st.copy(days = days, moods = moods, habits = habits)
+        fun applyTo(st: WeekUiState) = st.copy(days = days, moods = moods)
     }
 
-    private fun summarise(
-        daily: List<DailyTaskRow>,
-        moods: List<MoodEntity>,
-        items: List<SelfCareItemEntity>,
-        checks: List<SelfCareCheckEntity>,
-    ): Summary {
+    private fun summarise(daily: List<DailyTaskRow>, moods: List<MoodEntity>): Summary {
         val byDate = daily.filter { it.text.isNotBlank() }.groupBy { it.date }
         val dayUi = days.map { d ->
             val rows = byDate[d].orEmpty()
@@ -120,12 +108,7 @@ class WeekViewModel(
             )
         }
         val moodByDate = moods.associate { it.date to it.mood }
-        val grid = weekGrid(items, checks, days)
-        return Summary(
-            days = dayUi,
-            moods = days.map { moodByDate[it] },
-            habits = items.map { WeekHabitUi(it.id, it.name, grid[it.id].orEmpty()) },
-        )
+        return Summary(days = dayUi, moods = days.map { moodByDate[it] })
     }
 
     // ---- Editing ----
@@ -143,7 +126,6 @@ class WeekViewModel(
         goals = taskListActions({ editTasks(TaskSection.GOALS, it) }, ::blankRow, GOAL_SLOTS, GOAL_SLOTS),
         todo = taskListActions({ editTasks(TaskSection.TODO, it) }, ::blankRow, MIN_TODO),
         dontForget = taskListActions({ editTasks(TaskSection.DONT_FORGET, it) }, ::blankRow, MIN_DONT_FORGET),
-        onToggleHabit = { id, date -> viewModelScope.launch { selfCare.toggleCheck(id, date) } },
         onNotes = { text ->
             if (autosaver.ready) {
                 _state.update { it.copy(notes = text) }

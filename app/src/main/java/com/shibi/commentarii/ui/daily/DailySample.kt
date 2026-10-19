@@ -29,19 +29,6 @@ fun sampleDailyUiState(date: LocalDate = LocalDate.of(2026, 10, 18)): DailyUiSta
         todo = listOf(t("Reply to emails", done = true), t("Water the plants"), t("Book flights"), t("Tidy the desk")),
         schedule = (hours + custom).sortedWith(compareBy({ it.minuteOfDay }, { it.isCustom })),
         dontForget = listOf(t("Mom's birthday gift"), t("Library books due"), t("Take vitamins")),
-        grateful = listOf(
-            t("A quiet morning"),
-            t("Good coffee"),
-            t("A call with a friend"),
-            t("Sunshine"),
-            t("A warm bed"),
-        ),
-        selfCare = listOf(
-            SelfCareUi(1, "Drink water", checked = true, streak = 3),
-            SelfCareUi(2, "Stretch", checked = false, streak = 12),
-            SelfCareUi(3, "Read 10 pages", checked = true, streak = 1),
-            SelfCareUi(4, "Skincare", checked = false, streak = 0),
-        ),
         mood = 4,
         notes = "Slept well. Remember to follow up on the invoice and plan the weekend trip.",
     )

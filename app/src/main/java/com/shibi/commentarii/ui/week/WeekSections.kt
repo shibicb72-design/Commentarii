@@ -2,7 +2,6 @@ package com.shibi.commentarii.ui.week
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,18 +14,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.shibi.commentarii.R
 import com.shibi.commentarii.ui.common.moodFace
-import com.shibi.commentarii.ui.daily.CircleCheck
 import com.shibi.commentarii.ui.daily.SectionCard
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -89,40 +85,6 @@ private fun WeekDayRow(day: WeekDayUi, isToday: Boolean, onOpenDay: (LocalDate) 
     }
 }
 
-/** Habit grid: one row per habit, one check per day. Toggling writes the same check the daily page shows. */
-@Composable
-fun WeekHabitCard(
-    days: List<LocalDate>,
-    habits: List<WeekHabitUi>,
-    onToggle: (itemId: Long, date: LocalDate) -> Unit,
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true,
-) {
-    val initials = remember(days) { days.map { it.dayOfWeek.getDisplayName(TextStyle.NARROW, Locale.getDefault()) } }
-    SectionCard(stringResource(R.string.section_self_care), modifier) {
-        Row(Modifier.fillMaxWidth()) {
-            initials.forEach { letter ->
-                Text(
-                    letter,
-                    style = MaterialTheme.typography.labelMedium,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.weight(1f),
-                )
-            }
-        }
-        habits.forEach { habit ->
-            Text(habit.name, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(top = 6.dp))
-            Row(Modifier.fillMaxWidth()) {
-                days.forEachIndexed { i, date ->
-                    Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                        CircleCheck(habit.checks.getOrElse(i) { false }, { onToggle(habit.id, date) }, enabled = enabled)
-                    }
-                }
-            }
-        }
-    }
-}
-
 /** One mood face per day (set on the daily page); tapping a day opens it. */
 @Composable
 fun WeekMoodCard(
@@ -152,7 +114,7 @@ fun WeekMoodCard(
                         if (face != null) {
                             Icon(face.first, contentDescription = null, modifier = Modifier.size(28.dp))
                         } else {
-                            Text(stringResource(R.string.habit_summary_none), style = MaterialTheme.typography.titleMedium)
+                            Text(stringResource(R.string.mood_none_short), style = MaterialTheme.typography.titleMedium)
                         }
                     }
                 }

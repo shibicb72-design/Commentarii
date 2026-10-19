@@ -32,11 +32,6 @@ fun sampleMonthUiState(month: YearMonth = YearMonth.of(2026, 10)): MonthUiState 
             EventUi(k++, LocalDate.of(month.year, month.month, month.lengthOfMonth()).toEpochDay(), "Rent due"),
         ),
         todo = listOf(t("Renew the passport"), t("Book flights", done = true), t("Clean the garage")),
-        habits = listOf(
-            MonthHabitUi(1, "Drink water", 14, 18),
-            MonthHabitUi(2, "Stretch", 6, 18),
-            MonthHabitUi(3, "Read 10 pages", 11, 18),
-        ),
         notes = "Quiet month so far. Keep the evenings free for the trip planning.",
         review = "Good momentum on the release; slow on exercise. Add a fixed running day next month.",
     )
