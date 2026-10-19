@@ -19,13 +19,14 @@ class BootReceiver : BroadcastReceiver() {
         private set
 
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action !in ACTIONS) return
+        val action = intent.action ?: return
+        if (action !in ACTIONS) return
         val container = (context.applicationContext as CommentariiApp).container
         // goAsync() is null when the receiver is invoked outside a real broadcast (e.g. in unit tests).
         val pending: PendingResult? = goAsync()
         job = scope.launch {
             try {
-                container.rescheduleAllAlarms()
+                container.rescheduleAllAlarms(action)
             } finally {
                 pending?.finish()
             }

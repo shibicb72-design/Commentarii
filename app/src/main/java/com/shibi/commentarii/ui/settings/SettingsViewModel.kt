@@ -45,8 +45,14 @@ class SettingsViewModel(
         )
     }
 
-    val state: StateFlow<SettingsUiState> = combine(base, message, exactGranted) { s, m, e ->
-        s.copy(message = m, exactAlarmGranted = e)
+    private val batteryUnrestricted = MutableStateFlow(true)
+
+    private val status = combine(exactGranted, batteryUnrestricted, container.notificationsBlocked) { e, b, n ->
+        Triple(e, b, n)
+    }
+
+    val state: StateFlow<SettingsUiState> = combine(base, message, status) { s, m, (e, b, n) ->
+        s.copy(message = m, exactAlarmGranted = e, batteryUnrestricted = b, notificationsBlocked = n)
     }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SettingsUiState(licenseText = licenseText))
 
@@ -54,6 +60,25 @@ class SettingsViewModel(
 
     fun refreshExactAlarm() {
         exactGranted.value = container.alarms.canScheduleExact()
+    }
+
+    /** Re-reads exact-alarm, notification and (given by the UI) battery state; call on resume. */
+    fun refreshReminderStatus(batteryUnrestricted: Boolean) {
+        this.batteryUnrestricted.value = batteryUnrestricted
+        exactGranted.value = container.alarms.canScheduleExact()
+        container.refreshNotificationState()
+    }
+
+    /** Schedules the 10 s test; when notifications are blocked also asks for permission and says why nothing will show. */
+    fun sendTestReminder() {
+        container.alarms.scheduleTestReminder()
+        container.refreshNotificationState()
+        if (container.notificationsBlocked.value) {
+            message.value = SettingsMessage.NOTIFICATIONS_OFF
+            viewModelScope.launch { container.onTimedEntryHasText() }
+        } else {
+            message.value = SettingsMessage.TEST_SCHEDULED
+        }
     }
 
     fun setLockEnabled(value: Boolean) {
@@ -109,7 +134,7 @@ class SettingsViewModel(
                 val from = LocalDate.now(container.clock).minusDays(1)
                 container.alarms.cancel(container.pages.getUpcomingSchedule(from).map { it.id })
                 container.exportImport.import(json)
-                container.rescheduleAllAlarms()
+                container.rescheduleAllAlarms("settings")
                 SettingsMessage.IMPORT_OK
             } catch (e: CancellationException) {
                 throw e

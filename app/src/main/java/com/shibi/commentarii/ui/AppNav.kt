@@ -44,6 +44,7 @@ import com.shibi.commentarii.ui.lock.NavRestore
 import com.shibi.commentarii.ui.notes.NoteEditorScreen
 import com.shibi.commentarii.ui.notes.NotesListScreen
 import com.shibi.commentarii.ui.search.SearchScreen
+import com.shibi.commentarii.ui.settings.DebugLogScreen
 import com.shibi.commentarii.ui.settings.SettingsScreen
 import java.time.LocalDate
 
@@ -53,6 +54,7 @@ object Routes {
     const val NOTES = "notes"
     const val SEARCH = "search"
     const val SETTINGS = "settings"
+    const val DEBUG = "settings/debug"
 
     fun daily(date: LocalDate) = "daily/$date"
     fun note(id: Long) = "note/$id"
@@ -70,7 +72,7 @@ private fun tabOf(route: String?): Tab? = when {
     route.startsWith("daily/") -> Tab.TODAY
     route.startsWith("note") -> Tab.NOTES
     route == Routes.SEARCH -> Tab.SEARCH
-    route == Routes.SETTINGS -> Tab.SETTINGS
+    route == Routes.SETTINGS || route == Routes.DEBUG -> Tab.SETTINGS
     else -> null
 }
 
@@ -203,7 +205,10 @@ fun AppNav(
                             },
                         )
                     }
-                    composable(Routes.SETTINGS) { SettingsScreen(container) }
+                    composable(Routes.SETTINGS) {
+                        SettingsScreen(container, onOpenDebug = { nav.navigate(Routes.DEBUG) })
+                    }
+                    composable(Routes.DEBUG) { DebugLogScreen(container, onBack = { nav.popBackStack() }) }
                 }
             }
         }

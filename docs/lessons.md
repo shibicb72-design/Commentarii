@@ -17,3 +17,9 @@ Carried over from Theatrum (local_music_player) where they apply:
 - [rollover] dialog outside-tap was ignored and could not be re-offered -> dismiss only clears the in-memory offer (RolloverSession.dismiss); only Move/Skip set lastOpenedDate.
 - [backup] hasUserData was pageCount() > 1 and missed single-day data -> count non-blank tasks, schedule text, notes text, titled notes, moods and self-care checks; blank auto-created pages do not count.
 - [test] goAsync() is null when a receiver is called directly -> use PendingResult? and keep the launched Job on the receiver so tests can join it.
+- [alarms] a custom time less than 10 min away got no alarm and no feedback (triggerAt returned null) -> entry-10min if still ahead, else fire in 5 s if the entry itself is ahead (remember the immediate in `alarm_state` prefs so boot/resume do not repeat it), else tell the user it is past.
+- [alarms] alarms set before the exact-alarm grant stayed inexact and the state-change broadcast is unreliable -> reschedule everything on every app start (AppContainer.onAppStart) as well as in BootReceiver.
+- [notify] the channel was IMPORTANCE_DEFAULT and importance cannot be raised after creation -> new channel id (schedule_reminders_v2, HIGH), delete the old one.
+- [alarms] request code was an xor-hash of the id and the PendingIntent had no per-entry identity -> action + `commentarii://alarm/<id>` data and requestCode = id.toInt(); cancel with an identical FLAG_NO_CREATE intent.
+- [notify] POST_NOTIFICATIONS was asked once only, with no guidance and no fire-time check -> ask whenever notifications are not enabled, expose notificationsBlocked for a settings shortcut, and log enabled/channel importance when posting.
+- [debug] reminders failed silently with nothing to inspect -> local ring log (DebugLog, 500 lines, no note text) for schedule, cancel, fire and reschedule events, plus a 10 s test reminder.

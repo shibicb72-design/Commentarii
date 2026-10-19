@@ -5,7 +5,7 @@ import java.time.Instant
 import java.time.ZoneId
 
 /**
- * The alarms to register for [entries]: saved entries (id != 0) with non-blank text whose trigger time is still in
+ * The alarms to register for [entries]: saved entries (id != 0) with non-blank text whose entry time is still ahead (an entry less than 10 minutes away gets an immediate alarm)
  * the future, one per entry id and one per identical (trigger time, text) pair.
  */
 fun selectAlarms(entries: List<ScheduleEntryEntity>, now: Instant, zone: ZoneId): List<Alarm> =

@@ -156,6 +156,7 @@
     <string name="notif_channel_name">Schedule reminders</string>
     <string name="notif_channel_desc">Reminders ten minutes before a schedule entry.</string>
     <string name="notif_in_10_min">In 10 min: %1$s</string>
+    <string name="notif_test_text">Test reminder</string>
     <string name="lock_prompt_title">Unlock Commentarii</string>
     <string name="lock_prompt_subtitle">Use your fingerprint or device lock.</string>
     <string name="lock_unavailable_title">Set up a screen lock</string>
@@ -165,4 +166,23 @@
     <string name="settings_exact_alarm_title">Exact reminder times</string>
     <string name="settings_exact_alarm_explainer">Without this permission reminders may arrive a few minutes late. Allow exact alarms for on-time reminders.</string>
     <string name="settings_exact_alarm_button">Allow exact alarms</string>
+    <string name="outcome_immediate">Reminder in less than 10 min - notifying now</string>
+    <string name="outcome_past">That time has already passed - no reminder set</string>
+    <string name="notif_blocked_message">Notifications are off - reminders can\'t appear</string>
+    <string name="notif_blocked_button">Open notification settings</string>
+    <string name="settings_section_reminders">Reminders</string>
+    <string name="settings_exact_alarm_ok">Exact alarms: allowed</string>
+    <string name="settings_battery_unrestricted">Battery: unrestricted</string>
+    <string name="settings_battery_optimised">Battery: optimised - reminders may be delayed</string>
+    <string name="settings_battery_button">Battery optimisation settings</string>
+    <string name="settings_battery_samsung_note">On Samsung, also open Battery > Background usage limits and remove Commentarii from \'Sleeping apps\'/\'Deep sleeping apps\'.</string>
+    <string name="settings_test_reminder">Send test reminder</string>
+    <string name="settings_msg_test_scheduled">Test reminder in 10 s - lock the phone to test</string>
+    <string name="settings_debugging">Debugging</string>
+    <string name="settings_debug_open">Open debug log</string>
+    <string name="debug_title">Debug log</string>
+    <string name="debug_copy_all">Copy all</string>
+    <string name="debug_clear">Clear</string>
+    <string name="debug_copied">Copied</string>
+    <string name="debug_empty">The log is empty.</string>
 </resources>

@@ -83,6 +83,23 @@ class BootReceiverTest {
     }
 
     @Test
+    fun exactAlarmStateChangeReschedulesAndLogsReason() {
+        send(BootReceiver.ACTION_EXACT_ALARM_STATE_CHANGED)
+        assertEquals(1, scheduled().size)
+        val log = app.container.debugLog.readAll()
+        assertEquals(true, log.contains("RESCHEDULE_ALL reason=${BootReceiver.ACTION_EXACT_ALARM_STATE_CHANGED}"))
+    }
+
+    @Test
+    fun appStartReschedulesAlarms() {
+        assertEquals(0, scheduled().size)
+        runBlocking { app.container.onAppStart().join() }
+        assertEquals(1, scheduled().size)
+        assertEquals(expectedTrigger(), scheduled().single().triggerAtMs)
+        assertEquals(true, app.container.debugLog.readAll().contains("RESCHEDULE_ALL reason=app resume"))
+    }
+
+    @Test
     fun unrelatedActionIsIgnored() {
         val receiver = send(Intent.ACTION_BATTERY_LOW)
         assertNull(receiver.job)

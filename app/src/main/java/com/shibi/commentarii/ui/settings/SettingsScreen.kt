@@ -5,6 +5,7 @@ import android.content.ContextWrapper
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.os.PowerManager
 import android.provider.Settings
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.fragment.app.FragmentActivity
@@ -66,7 +67,7 @@ private const val LICENSE_ASSET = "licenses/DancingScript-OFL.txt"
 
 /** Settings wired to [SettingsViewModel]: SAF launchers, import confirmation and snackbar. */
 @Composable
-fun SettingsScreen(container: AppContainer, modifier: Modifier = Modifier) {
+fun SettingsScreen(container: AppContainer, modifier: Modifier = Modifier, onOpenDebug: () -> Unit = {}) {
     val context = LocalContext.current
     val licenseText = remember {
         runCatching { context.assets.open(LICENSE_ASSET).bufferedReader().use { it.readText() } }.getOrDefault("")
@@ -108,6 +109,10 @@ fun SettingsScreen(container: AppContainer, modifier: Modifier = Modifier) {
                     onUnavailable = { showLockHelp = true },
                 )
             },
+            onOpenNotificationSettings = { openNotificationSettings(context) },
+            onOpenBatterySettings = { context.startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)) },
+            onSendTestReminder = vm::sendTestReminder,
+            onOpenDebug = onOpenDebug,
             onRequestExactAlarm = {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     context.startActivity(
@@ -118,7 +123,8 @@ fun SettingsScreen(container: AppContainer, modifier: Modifier = Modifier) {
         )
     }
     LifecycleResumeEffect(vm) {
-        vm.refreshExactAlarm()
+        val power = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+        vm.refreshReminderStatus(power.isIgnoringBatteryOptimizations(context.packageName))
         onPauseOrDispose { }
     }
 
@@ -169,6 +175,17 @@ private fun messageRes(m: SettingsMessage): Int = when (m) {
     SettingsMessage.IMPORT_OK -> R.string.settings_msg_import_ok
     SettingsMessage.IMPORT_BAD_FORMAT -> R.string.settings_msg_import_bad_format
     SettingsMessage.IMPORT_FAILED -> R.string.settings_msg_import_failed
+    SettingsMessage.TEST_SCHEDULED -> R.string.settings_msg_test_scheduled
+    SettingsMessage.NOTIFICATIONS_OFF -> R.string.notif_blocked_message
+}
+
+/** Opens this app's system notification settings page. */
+fun openNotificationSettings(context: Context) {
+    context.startActivity(
+        Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+            .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+    )
 }
 
 private fun Context.findFragmentActivity(): FragmentActivity? {
@@ -203,8 +220,17 @@ fun SettingsContent(state: SettingsUiState, callbacks: SettingsCallbacks, modifi
                     callbacks.onLockChange,
                 )
             }
-            if (!state.exactAlarmGranted) {
-                SectionCard(stringResource(R.string.settings_exact_alarm_title)) {
+            SectionCard(stringResource(R.string.settings_section_reminders)) {
+                if (state.notificationsBlocked) {
+                    NotificationsBlockedMessage(callbacks.onOpenNotificationSettings)
+                }
+                if (state.exactAlarmGranted) {
+                    Text(
+                        stringResource(R.string.settings_exact_alarm_ok),
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(vertical = 4.dp),
+                    )
+                } else {
                     Text(
                         stringResource(R.string.settings_exact_alarm_explainer),
                         style = MaterialTheme.typography.bodyMedium,
@@ -214,6 +240,23 @@ fun SettingsContent(state: SettingsUiState, callbacks: SettingsCallbacks, modifi
                         modifier = Modifier.padding(vertical = 8.dp),
                     ) { Text(stringResource(R.string.settings_exact_alarm_button)) }
                 }
+                Text(
+                    stringResource(batteryStatusRes(state.batteryUnrestricted)),
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
+                OutlinedButton(
+                    onClick = callbacks.onOpenBatterySettings,
+                    modifier = Modifier.padding(vertical = 8.dp),
+                ) { Text(stringResource(R.string.settings_battery_button)) }
+                Text(
+                    stringResource(R.string.settings_battery_samsung_note),
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                Button(
+                    onClick = callbacks.onSendTestReminder,
+                    modifier = Modifier.padding(vertical = 8.dp),
+                ) { Text(stringResource(R.string.settings_test_reminder)) }
             }
             SectionCard(stringResource(R.string.settings_section_backup)) {
                 SwitchRow(
@@ -259,10 +302,25 @@ fun SettingsContent(state: SettingsUiState, callbacks: SettingsCallbacks, modifi
             SectionCard(stringResource(R.string.section_self_care)) {
                 SelfCareEditor(state.selfCare, callbacks)
             }
+            SectionCard(stringResource(R.string.settings_debugging)) {
+                OutlinedButton(
+                    onClick = callbacks.onOpenDebug,
+                    modifier = Modifier.padding(vertical = 8.dp),
+                ) { Text(stringResource(R.string.settings_debug_open)) }
+            }
             SectionCard(stringResource(R.string.settings_section_licences)) {
                 LicencesBlock(state.licenseText)
             }
         }
+    }
+}
+
+/** Message plus button; the text colour comes from the surrounding card/surface. */
+@Composable
+fun NotificationsBlockedMessage(onOpenSettings: () -> Unit) {
+    Text(stringResource(R.string.notif_blocked_message), style = MaterialTheme.typography.bodyMedium)
+    OutlinedButton(onClick = onOpenSettings, modifier = Modifier.padding(vertical = 8.dp)) {
+        Text(stringResource(R.string.notif_blocked_button))
     }
 }
 

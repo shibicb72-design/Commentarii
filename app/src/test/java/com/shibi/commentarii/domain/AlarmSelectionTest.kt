@@ -22,10 +22,10 @@ class AlarmSelectionTest {
             entry(2, 12 * 60, "lunch"),
             entry(3, 13 * 60, "   "),
             entry(0, 14 * 60, "unsaved"),
-            entry(4, 9 * 60 + 5, "too soon"), // trigger 08:55 is before now
+            entry(4, 9 * 60 + 5, "too soon"), // within 10 min: immediate, sorted first
             entry(5, 1 * 60, "tomorrow", day.plusDays(1)),
         )
-        assertEquals(listOf(2L, 5L), selectAlarms(entries, now, zone).map { it.entryId })
+        assertEquals(listOf(4L, 2L, 5L),selectAlarms(entries, now, zone).map { it.entryId })
     }
 
     @Test

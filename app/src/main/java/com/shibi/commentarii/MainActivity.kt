@@ -45,7 +45,9 @@ class MainActivity : AppCompatActivity() {
     private var authAvailable by mutableStateOf(true)
 
     private val notificationPermission =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) {
+            (application as CommentariiApp).container.refreshNotificationState()
+        }
 
     @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -132,6 +134,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        (application as CommentariiApp).container.refreshNotificationState()
         authAvailable = BiometricAuth.isAvailable(this)
     }
 
