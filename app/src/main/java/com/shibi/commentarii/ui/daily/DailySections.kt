@@ -43,12 +43,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.shibi.commentarii.R
 import com.shibi.commentarii.ui.theme.AppColors
+import com.shibi.commentarii.ui.theme.ThemedBullet
+import com.shibi.commentarii.ui.theme.currentArt
+import com.shibi.commentarii.ui.theme.themedBadge
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
 @Composable
 fun PrioritiesCard(items: List<TaskUi>, actions: TaskListActions, modifier: Modifier = Modifier) {
+    val art = currentArt()
     SectionCard(stringResource(R.string.section_priorities), modifier) {
         items.forEachIndexed { i, item ->
             LineField(
@@ -58,7 +62,13 @@ fun PrioritiesCard(items: List<TaskUi>, actions: TaskListActions, modifier: Modi
                 strike = item.done,
                 leading = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("${i + 1}.", style = MaterialTheme.typography.titleMedium, modifier = Modifier.width(26.dp))
+                        Text(
+                            "${i + 1}.",
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.width(26.dp).then(
+                                if (art != null) Modifier.themedBadge(i, art.second) else Modifier,
+                            ),
+                        )
                         CircleCheck(item.done, { actions.onToggleDone(i) })
                     }
                 },
@@ -114,7 +124,7 @@ fun DontForgetCard(items: List<TaskUi>, actions: TaskListActions, modifier: Modi
                 placeholder = stringResource(R.string.daily_dont_forget_hint),
                 enabled = enabled,
                 leading = {
-                    Box(Modifier.size(6.dp).background(LocalContentColor.current, CircleShape))
+                    ThemedBullet(i)
                 },
                 trailing = {
                     SmallIconButton(

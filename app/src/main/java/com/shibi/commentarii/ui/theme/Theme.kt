@@ -209,6 +209,8 @@ class AppTheme(
     val animated: Boolean = false,
     val periodMillis: Int = 0,
     val staticPhase: Float = 0f,
+    val scene: ThemeScene? = null,
+    val staticTimeSec: Float = 0f,
 )
 
 val LocalAppTheme = staticCompositionLocalOf { AppThemes.Default }

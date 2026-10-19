@@ -28,6 +28,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,6 +40,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
@@ -50,7 +52,13 @@ import com.shibi.commentarii.ui.components.checklistTextStyle
 import com.shibi.commentarii.ui.components.firstLineTopPadding
 import com.shibi.commentarii.ui.theme.AppColors
 import com.shibi.commentarii.ui.theme.HeaderStyle
+import com.shibi.commentarii.ui.theme.LabelStyle
 import com.shibi.commentarii.ui.theme.LocalAppTheme
+import com.shibi.commentarii.ui.theme.ThemedCheckGlyph
+import com.shibi.commentarii.ui.theme.ThemedSectionLabel
+import com.shibi.commentarii.ui.theme.cardDecor
+import com.shibi.commentarii.ui.theme.currentArt
+import com.shibi.commentarii.ui.theme.themedCard
 import kotlin.math.abs
 
 /**
@@ -110,6 +118,7 @@ fun LineField(
 fun CircleCheck(checked: Boolean, onToggle: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
     val primary = MaterialTheme.colorScheme.primary
     val ring = if (checked) primary else LocalContentColor.current.copy(alpha = 0.7f)
+    val art = currentArt()
     Box(
         modifier
             .size(40.dp)
@@ -117,7 +126,9 @@ fun CircleCheck(checked: Boolean, onToggle: () -> Unit, modifier: Modifier = Mod
             .toggleable(value = checked, enabled = enabled, role = Role.Checkbox, onValueChange = { onToggle() }),
         contentAlignment = Alignment.Center,
     ) {
-        Box(
+        if (art != null) {
+            ThemedCheckGlyph(checked)
+        } else Box(
             Modifier
                 .size(22.dp)
                 .clip(CircleShape)
@@ -213,6 +224,13 @@ private fun Modifier.headerDecor(style: HeaderStyle, tabColor: Color, onTab: Col
     else -> this
 }
 
+private fun artCardRadius(style: LabelStyle) = when (style) {
+    LabelStyle.PILL -> 18.dp
+    LabelStyle.SWASH -> 16.dp
+    LabelStyle.STAMP -> 14.dp
+    LabelStyle.ROSE -> 16.dp
+}
+
 /** Rounded card with a pink label tab. Content colour comes from the card container. */
 @Composable
 fun SectionCard(title: String, modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
@@ -222,8 +240,13 @@ fun SectionCard(title: String, modifier: Modifier = Modifier, content: @Composab
     val notchPx = with(LocalDensity.current) { 6.dp.toPx() }
     val tabShape = if (theme.headerStyle == HeaderStyle.RIBBON) notchedShape(notchPx) else theme.tabShape
     val highlighter = theme.headerStyle == HeaderStyle.HIGHLIGHTER
+    val art = currentArt()
+    val decor = art?.let { (a, c) -> remember(theme.id, title, c) { cardDecor(theme.id, a, c, title) } }
+    val cardShape = if (art != null) RoundedCornerShape(artCardRadius(art.first.labelStyle)) else theme.cardShape
     Column(modifier.fillMaxWidth()) {
-        Surface(
+        if (art != null) {
+            ThemedSectionLabel(title, tabColor)
+        } else Surface(
             color = if (highlighter) Color.Transparent else tabColor,
             contentColor = colors.onTab,
             shape = tabShape,
@@ -239,9 +262,12 @@ fun SectionCard(title: String, modifier: Modifier = Modifier, content: @Composab
         Surface(
             color = colors.card,
             contentColor = colors.onCard,
-            shape = theme.cardShape,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-            modifier = Modifier.fillMaxWidth(),
+            shape = cardShape,
+            border = if (art != null) {
+                val edge = art.second.cardEdge ?: lerp(tabColor, art.second.ink, 0.18f)
+                BorderStroke(1.5.dp, edge)
+            } else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            modifier = if (decor != null) Modifier.fillMaxWidth().themedCard(decor, cardShape) else Modifier.fillMaxWidth(),
         ) {
             Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), content = content)
         }

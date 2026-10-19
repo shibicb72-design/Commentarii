@@ -63,11 +63,38 @@ class ThemeContrastTest {
     }.map { Color(it) }
 
     @Test
+    fun themeArtInkAndTitleColoursReadAgainstPalette() {
+        assertEquals(null, themeArt("rose_cream"))
+        val failures = mutableListOf<String>()
+        for (theme in AppThemes.all.filter { it.id != "rose_cream" }) {
+            val art = themeArt(theme.id)
+            assertTrue("${theme.id} has no art", art != null)
+            for ((modeName, pair) in listOf("light" to (art!!.light to theme.light), "dark" to (art.dark to theme.dark))) {
+                val (colors, mode) = pair
+                val tag = "${theme.id}/$modeName"
+                colors.accents.forEachIndexed { i, a -> check("$tag ink/accent$i", colors.ink, a, 4.5f, failures) }
+                val bg = mode.scheme.background
+                if (colors.outline != null) {
+                    check("$tag outline/bg", colors.outline, bg, 4.5f, failures)
+                } else {
+                    colors.title.forEachIndexed { i, t -> check("$tag title$i/bg", t, bg, 3f, failures) }
+                }
+            }
+        }
+        assertTrue(failures.joinToString("\n"), failures.isEmpty())
+    }
+
+    @Test
     fun idsAreUniqueAndLookupFallsBack() {
         val ids = AppThemes.all.map { it.id }
         assertEquals(ids.size, ids.toSet().size)
         assertEquals(AppThemes.Default, AppThemes.byId("nope"))
         assertEquals(AppThemes.Default, AppThemes.byId(null))
         assertTrue(AppThemes.all.count { it.animated } <= 3)
+    }
+
+    @Test
+    fun exactlyThreeThemesHaveAnimatedScenes() {
+        assertEquals(3, AppThemes.all.count { it.scene != null })
     }
 }

@@ -91,6 +91,45 @@ class ScreenshotTest {
     @Test fun dailyThemeMatchaTea() = themedDaily("matcha_tea")
     @Test fun dailyThemeLavenderMoon() = themedDaily("lavender_moon")
 
+    private val s24u = "w384dp-h832dp-xxxhdpi"
+    private val foldCover = "w373dp-h873dp-xxhdpi"
+    private val foldInner = "w673dp-h747dp-xxhdpi"
+
+    // Device shots of a themed page: Compact everywhere except the Fold inner screen (Medium).
+    private fun themedPage(id: String, page: String, q: String, dev: String) {
+        val width = if (dev == "fold_inner") WindowWidthSizeClass.Medium else WindowWidthSizeClass.Compact
+        RuntimeEnvironment.setQualifiers(q)
+        rule.setContent {
+            CommentariiTheme(dark = false, theme = AppThemes.byId(id), animate = false) {
+                when (page) {
+                    "daily" -> DailyPageContent(sampleDailyUiState(), DailyActions(), width)
+                    "week" -> WeekPageContent(sampleWeekUiState(), WeekActions(), width)
+                    else -> MonthPageContent(sampleMonthUiState(), MonthActions(), width)
+                }
+            }
+        }
+        rule.onRoot().captureRoboImage("build/outputs/roborazzi/${page}_theme_${id}_$dev.png")
+    }
+
+    @Test fun dailyWashiS24u() = themedPage("washi_planner", "daily", s24u, "s24u")
+    @Test fun dailyWashiFoldCover() = themedPage("washi_planner", "daily", foldCover, "fold_cover")
+    @Test fun dailyWashiFoldInner() = themedPage("washi_planner", "daily", foldInner, "fold_inner")
+    @Test fun weekWashiS24u() = themedPage("washi_planner", "week", s24u, "s24u")
+    @Test fun weekWashiFoldCover() = themedPage("washi_planner", "week", foldCover, "fold_cover")
+    @Test fun weekWashiFoldInner() = themedPage("washi_planner", "week", foldInner, "fold_inner")
+    @Test fun monthWashiS24u() = themedPage("washi_planner", "month", s24u, "s24u")
+    @Test fun monthWashiFoldCover() = themedPage("washi_planner", "month", foldCover, "fold_cover")
+    @Test fun monthWashiFoldInner() = themedPage("washi_planner", "month", foldInner, "fold_inner")
+    @Test fun dailyCloudS24u() = themedPage("cloud_drift", "daily", s24u, "s24u")
+    @Test fun dailyCloudFoldCover() = themedPage("cloud_drift", "daily", foldCover, "fold_cover")
+    @Test fun dailyCloudFoldInner() = themedPage("cloud_drift", "daily", foldInner, "fold_inner")
+    @Test fun weekCloudS24u() = themedPage("cloud_drift", "week", s24u, "s24u")
+    @Test fun weekCloudFoldCover() = themedPage("cloud_drift", "week", foldCover, "fold_cover")
+    @Test fun weekCloudFoldInner() = themedPage("cloud_drift", "week", foldInner, "fold_inner")
+    @Test fun monthCloudS24u() = themedPage("cloud_drift", "month", s24u, "s24u")
+    @Test fun monthCloudFoldCover() = themedPage("cloud_drift", "month", foldCover, "fold_cover")
+    @Test fun monthCloudFoldInner() = themedPage("cloud_drift", "month", foldInner, "fold_inner")
+
     private fun week(name: String, q: String, dark: Boolean, width: WindowWidthSizeClass) =
         shoot(name, q, dark) { WeekPageContent(sampleWeekUiState(), WeekActions(), width) }
 
