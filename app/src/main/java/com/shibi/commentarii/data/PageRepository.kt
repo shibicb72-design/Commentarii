@@ -21,8 +21,17 @@ class PageRepository(
 
     suspend fun getPage(id: Long): PageEntity? = dao.getPage(id)
 
-    /** True when there is more than the automatically created current page. */
-    suspend fun hasUserData(): Boolean = dao.pageCount() > 1
+    /**
+     * True when the user has entered anything worth backing up: text in a daily-notes or note document, a titled
+     * note, a non-blank task or schedule entry, a mood, or a self-care check. Blank auto-created daily pages do not count.
+     */
+    suspend fun hasUserData(): Boolean =
+        dao.nonBlankTaskCount() > 0 ||
+            dao.nonBlankScheduleCount() > 0 ||
+            dao.moodCount() > 0 ||
+            db.selfCareDao().totalCheckCount() > 0 ||
+            dao.titledNoteCount() > 0 ||
+            dao.getDocumentPayloads().any { BlockDocument.fromJson(it).flattenText().isNotEmpty() }
 
     fun observePage(id: Long): Flow<PageEntity?> = dao.observePage(id)
 

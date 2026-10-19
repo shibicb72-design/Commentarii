@@ -56,10 +56,6 @@ class SettingsViewModel(
         exactGranted.value = container.alarms.canScheduleExact()
     }
 
-    fun lockUnavailable() {
-        message.value = SettingsMessage.LOCK_UNAVAILABLE
-    }
-
     fun setLockEnabled(value: Boolean) {
         viewModelScope.launch { settings.setLockEnabled(value) }
     }

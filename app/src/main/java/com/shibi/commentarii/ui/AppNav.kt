@@ -21,11 +21,14 @@ import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -37,6 +40,7 @@ import com.shibi.commentarii.AppContainer
 import com.shibi.commentarii.R
 import com.shibi.commentarii.data.PageType
 import com.shibi.commentarii.ui.daily.DailyPageScreen
+import com.shibi.commentarii.ui.lock.NavRestore
 import com.shibi.commentarii.ui.notes.NoteEditorScreen
 import com.shibi.commentarii.ui.notes.NotesListScreen
 import com.shibi.commentarii.ui.search.SearchScreen
@@ -77,6 +81,8 @@ fun AppNav(
     widthClass: WindowWidthSizeClass,
     openDate: LocalDate? = null,
     onOpenDateHandled: () -> Unit = {},
+    restoreRoutes: List<String> = emptyList(),
+    onRoutesChanged: (List<String>) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val nav = rememberNavController()
@@ -85,6 +91,22 @@ fun AppNav(
     val current = tabOf(entry?.destination?.route)
     val compact = widthClass == WindowWidthSizeClass.Compact
     val onTab: (Tab) -> Unit = { navigateToTab(nav, it, today) }
+
+    // After an unlock the previous back stack is replayed; recording starts only once that is done.
+    var restored by remember { mutableStateOf(restoreRoutes.isEmpty()) }
+    LaunchedEffect(Unit) {
+        if (!restored) {
+            NavRestore.plan(restoreRoutes).forEach { step ->
+                nav.navigate(step.route) {
+                    if (step.replaceStart) popUpTo(Routes.DAILY) { inclusive = true }
+                }
+            }
+            restored = true
+        }
+    }
+    LaunchedEffect(entry, restored) {
+        if (restored) onRoutesChanged(nav.currentBackStack.value.mapNotNull { concreteRoute(it, today) })
+    }
 
     LaunchedEffect(openDate) {
         openDate?.let { d ->
@@ -186,6 +208,15 @@ fun AppNav(
             }
         }
     }
+}
+
+/** Route with its arguments filled in (e.g. `daily/2026-10-18`), or null for entries without a destination route. */
+private fun concreteRoute(entry: NavBackStackEntry, today: LocalDate): String? = when (val route = entry.destination.route) {
+    Routes.DAILY -> Routes.daily(
+        entry.arguments?.getString("date")?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: today,
+    )
+    Routes.NOTE -> entry.arguments?.getLong("id")?.let { Routes.note(it) }
+    else -> route
 }
 
 private fun navigateToTab(nav: NavHostController, tab: Tab, today: LocalDate) {

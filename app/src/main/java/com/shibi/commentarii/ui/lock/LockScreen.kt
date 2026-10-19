@@ -5,9 +5,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -17,12 +19,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.shibi.commentarii.R
 
-/** Stateless lock screen; the caller wires [onUnlock] to the biometric prompt. */
+/**
+ * Lock screen; the caller wires [onUnlock] to the biometric prompt. When [authAvailable] is false (no fingerprint or
+ * screen lock enrolled) it explains and offers [onOpenSecuritySettings]; Unlock re-checks and re-prompts.
+ */
 @Composable
-fun LockScreen(onUnlock: () -> Unit, modifier: Modifier = Modifier) {
+fun LockScreen(
+    onUnlock: () -> Unit,
+    modifier: Modifier = Modifier,
+    authAvailable: Boolean = true,
+    onOpenSecuritySettings: () -> Unit = {},
+) {
     Surface(
         modifier = modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background,
@@ -42,6 +53,19 @@ fun LockScreen(onUnlock: () -> Unit, modifier: Modifier = Modifier) {
             Spacer(Modifier.height(16.dp))
             Text(stringResource(R.string.app_name), style = MaterialTheme.typography.displayMedium)
             Spacer(Modifier.height(32.dp))
+            if (!authAvailable) {
+                Text(
+                    stringResource(R.string.lock_unavailable_explanation),
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 32.dp),
+                )
+                Spacer(Modifier.height(16.dp))
+                OutlinedButton(onClick = onOpenSecuritySettings) {
+                    Text(stringResource(R.string.lock_open_security_settings))
+                }
+                Spacer(Modifier.height(8.dp))
+            }
             Button(onClick = onUnlock) { Text(stringResource(R.string.lock_unlock)) }
         }
     }

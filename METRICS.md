@@ -15,3 +15,12 @@ Headless `claude -p --output-format json` runs (Claude Code 2.1.296), token-budg
 **Total: $5.73** across 4 runs (phaseB was cut off by the headless 10-min background-task ceiling while a subagent ran in the background; phaseB2 resumed it with foreground-only delegation).
 
 Note: no Opus tokens were recorded; in headless `-p` mode the main loop ran on Sonnet.
+
+## Follow-up fix round (Oct 18 2026, 11:03 PM ET)
+
+| Run | Model | Input | Output | Cache read | Cache write | Cost USD |
+|---|---|---|---|---|---|---|
+| fix1 | claude-sonnet-5-5 | 62 | 42513 | 2265880 | 176682 | 1.179 |
+| fix1 | claude-haiku-5-5 | 6 | 716 | 28514 | 18309 | 0.003 |
+
+**Fix round: $1.18. Running total: $6.91.**

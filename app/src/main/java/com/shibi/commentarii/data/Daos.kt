@@ -33,8 +33,20 @@ interface PageDao {
     @Query("SELECT * FROM pages WHERE type = 'NOTE' ORDER BY pinned DESC, updatedAt DESC, id DESC")
     fun observeNotes(): Flow<List<PageEntity>>
 
-    @Query("SELECT COUNT(*) FROM pages")
-    suspend fun pageCount(): Int
+    @Query("SELECT COUNT(*) FROM pages WHERE type = 'NOTE' AND TRIM(title) != ''")
+    suspend fun titledNoteCount(): Int
+
+    @Query("SELECT COUNT(*) FROM task_items WHERE TRIM(text) != ''")
+    suspend fun nonBlankTaskCount(): Int
+
+    @Query("SELECT COUNT(*) FROM schedule_entries WHERE TRIM(text) != ''")
+    suspend fun nonBlankScheduleCount(): Int
+
+    @Query("SELECT COUNT(*) FROM moods")
+    suspend fun moodCount(): Int
+
+    @Query("SELECT payloadJson FROM section_blocks WHERE kind IN ('NOTES', 'RICH_TEXT')")
+    suspend fun getDocumentPayloads(): List<String>
 
     @Query("UPDATE pages SET updatedAt = :at WHERE id = :id")
     suspend fun touch(id: Long, at: Instant)
@@ -277,6 +289,9 @@ interface SelfCareDao {
 
     @Query("UPDATE self_care_items SET position = :position WHERE id = :id")
     suspend fun setPosition(id: Long, position: Int)
+
+    @Query("SELECT COUNT(*) FROM self_care_checks")
+    suspend fun totalCheckCount(): Int
 
     @Query("SELECT COUNT(*) FROM self_care_checks WHERE itemId = :itemId AND date = :date")
     suspend fun checkCount(itemId: Long, date: LocalDate): Int

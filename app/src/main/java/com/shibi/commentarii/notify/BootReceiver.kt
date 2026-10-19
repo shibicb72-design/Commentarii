@@ -6,19 +6,28 @@ import android.content.Intent
 import com.shibi.commentarii.CommentariiApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 /** Re-registers all future alarms after reboot, clock/zone change, app update or exact-alarm permission change. */
 class BootReceiver : BroadcastReceiver() {
+    /** Replaceable in tests. */
+    internal var scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
+
+    /** The in-flight reschedule, so tests can wait for it. */
+    internal var job: Job? = null
+        private set
+
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action !in ACTIONS) return
         val container = (context.applicationContext as CommentariiApp).container
-        val pending = goAsync()
-        CoroutineScope(Dispatchers.IO).launch {
+        // goAsync() is null when the receiver is invoked outside a real broadcast (e.g. in unit tests).
+        val pending: PendingResult? = goAsync()
+        job = scope.launch {
             try {
                 container.rescheduleAllAlarms()
             } finally {
-                pending.finish()
+                pending?.finish()
             }
         }
     }

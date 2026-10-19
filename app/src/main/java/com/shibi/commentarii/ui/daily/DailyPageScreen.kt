@@ -40,6 +40,7 @@ fun DailyPageScreen(
             onMoveAll = { vm.resolveRollover(it.items.map { item -> item.id }.toSet()) },
             onMoveSelected = vm::resolveRollover,
             onSkip = { vm.resolveRollover(emptySet()) },
+            onDismiss = vm::dismissRollover,
         )
     }
 }

@@ -7,7 +7,7 @@ import java.time.LocalDate
 data class SelfCareEditUi(val id: Long, val name: String)
 
 /** One-shot result shown as a snackbar. */
-enum class SettingsMessage { EXPORT_OK, EXPORT_FAILED, IMPORT_OK, IMPORT_BAD_FORMAT, IMPORT_FAILED, LOCK_UNAVAILABLE }
+enum class SettingsMessage { EXPORT_OK, EXPORT_FAILED, IMPORT_OK, IMPORT_BAD_FORMAT, IMPORT_FAILED }
 
 data class SettingsUiState(
     val lockEnabled: Boolean = false,

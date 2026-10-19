@@ -158,7 +158,10 @@
     <string name="notif_in_10_min">In 10 min: %1$s</string>
     <string name="lock_prompt_title">Unlock Commentarii</string>
     <string name="lock_prompt_subtitle">Use your fingerprint or device lock.</string>
-    <string name="settings_msg_lock_unavailable">Set up a fingerprint or screen lock on this device first.</string>
+    <string name="lock_unavailable_title">Set up a screen lock</string>
+    <string name="lock_unavailable_explanation">No fingerprint or screen lock is set up on this device, so Commentarii cannot check who is opening it. Set one up in your device settings, then come back.</string>
+    <string name="lock_open_security_settings">Open security settings</string>
+    <string name="lock_dialog_close">Not now</string>
     <string name="settings_exact_alarm_title">Exact reminder times</string>
     <string name="settings_exact_alarm_explainer">Without this permission reminders may arrive a few minutes late. Allow exact alarms for on-time reminders.</string>
     <string name="settings_exact_alarm_button">Allow exact alarms</string>

@@ -10,6 +10,7 @@ import java.time.ZoneOffset
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -101,5 +102,67 @@ class PageRepositoryTest {
         repo.deleteFolder(folder.id)
         assertEquals(null, repo.getPage(note.id)?.folderId)
         assertEquals("Misc", repo.getPage(other.id)?.title)
+    }
+
+    private val day = LocalDate.of(2026, 10, 18)
+
+    @Test
+    fun hasUserDataFalseWhenEmptyOrOnlyBlankDailyPage() = runBlocking {
+        assertFalse(repo.hasUserData())
+        repo.getOrCreateDaily(day)
+        repo.getOrCreateDaily(day.plusDays(1))
+        assertFalse(repo.hasUserData())
+        repo.createNote("")
+        assertFalse(repo.hasUserData())
+    }
+
+    @Test
+    fun hasUserDataTrueForNonBlankTask() = runBlocking {
+        val p = repo.getOrCreateDaily(day)
+        repo.saveTasks(p.id, TaskSection.TODO, listOf(TaskItemEntity(pageId = p.id, section = "", position = 0, text = "  ")))
+        assertFalse(repo.hasUserData())
+        repo.saveTasks(p.id, TaskSection.TODO, listOf(TaskItemEntity(pageId = p.id, section = "", position = 0, text = "x")))
+        assertTrue(repo.hasUserData())
+    }
+
+    @Test
+    fun hasUserDataTrueForScheduleText() = runBlocking {
+        val p = repo.getOrCreateDaily(day)
+        val rows = repo.getSchedule(p.id)
+        repo.saveSchedule(p.id, listOf(rows.first().copy(text = "Dentist")) + rows.drop(1))
+        assertTrue(repo.hasUserData())
+    }
+
+    @Test
+    fun hasUserDataTrueForMood() = runBlocking {
+        repo.saveMood(day, 4)
+        assertTrue(repo.hasUserData())
+    }
+
+    @Test
+    fun hasUserDataTrueForSelfCareCheck() = runBlocking {
+        val care = SelfCareRepository(db)
+        val item = care.addItem("Walk")
+        assertFalse(repo.hasUserData())
+        care.toggleCheck(item.id, day)
+        assertTrue(repo.hasUserData())
+    }
+
+    @Test
+    fun hasUserDataTrueForDailyNotesText() = runBlocking {
+        val p = repo.getOrCreateDaily(day)
+        repo.saveBlockDocument(p.id, SectionKind.NOTES, BlockDocument(listOf(DocBlock(text = "thoughts"))))
+        assertTrue(repo.hasUserData())
+    }
+
+    @Test
+    fun hasUserDataTrueForNoteContentAndTitle() = runBlocking {
+        val note = repo.createNote("")
+        repo.saveBlockDocument(note.id, SectionKind.RICH_TEXT, BlockDocument(listOf(DocBlock(text = "body"))))
+        assertTrue(repo.hasUserData())
+        repo.saveBlockDocument(note.id, SectionKind.RICH_TEXT, BlockDocument.EMPTY)
+        assertFalse(repo.hasUserData())
+        repo.setTitle(note.id, "Ideas")
+        assertTrue(repo.hasUserData())
     }
 }

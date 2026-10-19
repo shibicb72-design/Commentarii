@@ -54,7 +54,7 @@ fun ExportReminderBanner(onDismiss: () -> Unit, modifier: Modifier = Modifier) {
 
 /**
  * "Carry over N unfinished items from <date>?" with Move all / Pick... / Skip. Pick switches to a checkbox list
- * (all ticked initially) with a confirm button. Any choice calls exactly one of the callbacks.
+ * (all ticked initially) with a confirm button. Any choice calls exactly one of the callbacks; tapping outside or back calls [onDismiss] (asked again next open).
  */
 @Composable
 fun RolloverDialog(
@@ -62,6 +62,7 @@ fun RolloverDialog(
     onMoveAll: () -> Unit,
     onMoveSelected: (Set<Long>) -> Unit,
     onSkip: () -> Unit,
+    onDismiss: () -> Unit = {},
 ) {
     var picking by rememberSaveable { mutableStateOf(false) }
     var selected by remember(offer) { mutableStateOf(offer.items.map { it.id }.toSet()) }
@@ -70,7 +71,7 @@ fun RolloverDialog(
 
     if (!picking) {
         AlertDialog(
-            onDismissRequest = {},
+            onDismissRequest = onDismiss,
             title = {
                 Text(
                     if (n == 1) {
@@ -95,7 +96,7 @@ fun RolloverDialog(
         )
     } else {
         AlertDialog(
-            onDismissRequest = {},
+            onDismissRequest = onDismiss,
             title = { Text(stringResource(R.string.rollover_pick_title)) },
             text = {
                 Column(Modifier.heightIn(max = 360.dp).verticalScroll(rememberScrollState())) {

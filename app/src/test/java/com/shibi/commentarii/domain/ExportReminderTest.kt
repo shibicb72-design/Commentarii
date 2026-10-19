@@ -22,6 +22,12 @@ class ExportReminderTest {
     @Test fun noDataHides() = assertFalse(show(hasData = false))
     @Test fun recentExportHides() = assertFalse(show(last = ago(13)))
     @Test fun oldExportShows() = assertTrue(show(last = ago(14)))
+    @Test fun exactly14DaysAgoShows() = assertTrue(show(last = ago(14)))
+    @Test fun justUnder14DaysHides() = assertFalse(show(last = ago(14).plusSeconds(1)))
+    @Test fun neverExportedWithoutDataHides() = assertFalse(show(hasData = false, last = null))
+    @Test fun dismissedExactly14DaysAgoShows() = assertTrue(show(dismissed = ago(14)))
+    @Test fun dismissedJustUnder14DaysHides() = assertFalse(show(dismissed = ago(14).plusSeconds(1)))
+    @Test fun oldExportButRecentDismissHides() = assertFalse(show(last = ago(30), dismissed = ago(2)))
     @Test fun recentDismissHides() = assertFalse(show(dismissed = ago(3)))
     @Test fun oldDismissShowsAgain() = assertTrue(show(dismissed = ago(15)))
 }

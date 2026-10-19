@@ -11,6 +11,7 @@ import com.shibi.commentarii.data.SectionKind
 import com.shibi.commentarii.data.TaskItemEntity
 import com.shibi.commentarii.data.TaskSection
 import com.shibi.commentarii.domain.RolloverOffer
+import com.shibi.commentarii.domain.RolloverSession
 import com.shibi.commentarii.domain.applyRollover
 import com.shibi.commentarii.domain.computeRollover
 import com.shibi.commentarii.domain.shouldShowExportReminder
@@ -51,10 +52,17 @@ class DailyViewModel(
     private val settings = container.settings
     private val isToday = date == LocalDate.now(container.clock)
 
-    private val _rollover = MutableStateFlow<RolloverOffer?>(null)
+    private val rolloverSession = RolloverSession(
+        date = date,
+        markHandled = { settings.setLastOpenedDate(it) },
+        apply = { offer, ids ->
+            applyRollover(pages, offer, ids, date)
+            reloadCarriedSections()
+        },
+    )
 
     /** Pending "carry over unfinished items" offer; only ever set for today's page. */
-    val rollover: StateFlow<RolloverOffer?> = _rollover.asStateFlow()
+    val rollover: StateFlow<RolloverOffer?> = rolloverSession.offer
 
     /** Whether the export reminder banner shows (today's page only). */
     val reminderVisible: StateFlow<Boolean> = combine(
@@ -75,21 +83,16 @@ class DailyViewModel(
         val offer = previous?.let {
             computeRollover(date, settings.lastOpenedDate.first(), it.date, pages.getTasks(it.id))
         }
-        if (offer == null) settings.setLastOpenedDate(date) else _rollover.value = offer
+        rolloverSession.onChecked(offer)
     }
 
     /** Applies the chosen items (empty = skip) and records that today has been opened. */
     fun resolveRollover(selectedIds: Set<Long>) {
-        val offer = _rollover.value ?: return
-        _rollover.value = null
-        viewModelScope.launch {
-            if (selectedIds.isNotEmpty()) {
-                applyRollover(pages, offer, selectedIds, date)
-                reloadCarriedSections()
-            }
-            settings.setLastOpenedDate(date)
-        }
+        viewModelScope.launch { rolloverSession.resolve(selectedIds) }
     }
+
+    /** Tap outside / back: hide the offer but ask again next time the page is opened. */
+    fun dismissRollover() = rolloverSession.dismiss()
 
     private suspend fun reloadCarriedSections() {
         val tasks = pages.getTasks(pageId).groupBy { it.section }

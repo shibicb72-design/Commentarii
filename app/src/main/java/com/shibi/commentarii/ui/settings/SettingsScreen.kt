@@ -9,6 +9,8 @@ import android.provider.Settings
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.fragment.app.FragmentActivity
 import com.shibi.commentarii.ui.lock.BiometricAuth
+import com.shibi.commentarii.ui.lock.SecuritySettings
+import com.shibi.commentarii.ui.lock.requestLockChange
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -74,6 +76,7 @@ fun SettingsScreen(container: AppContainer, modifier: Modifier = Modifier) {
     val resolver = context.contentResolver
     val snackbar = remember { SnackbarHostState() }
     var pendingImport by remember { mutableStateOf<Uri?>(null) }
+    var showLockHelp by remember { mutableStateOf(false) }
 
     val exportLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/json"),
@@ -89,17 +92,21 @@ fun SettingsScreen(container: AppContainer, modifier: Modifier = Modifier) {
         ).copy(
             onLockChange = { enable ->
                 val activity = context.findFragmentActivity()
-                if (!enable || activity == null) {
-                    vm.setLockEnabled(false)
-                } else if (!BiometricAuth.isAvailable(activity)) {
-                    vm.lockUnavailable()
-                } else {
-                    // Turning the lock on requires a successful authentication first.
-                    BiometricAuth.authenticate(activity, onSuccess = {
-                        container.lock.unlock()
-                        vm.setLockEnabled(true)
-                    })
-                }
+                requestLockChange(
+                    enable = enable,
+                    available = activity != null && BiometricAuth.isAvailable(activity),
+                    // Turning the lock on or off both need a successful authentication first.
+                    authenticate = { done ->
+                        if (activity != null) {
+                            BiometricAuth.authenticate(activity, onSuccess = { done(true) }, onFailure = { done(false) })
+                        }
+                    },
+                    apply = { value ->
+                        if (value) container.lock.unlock()
+                        vm.setLockEnabled(value)
+                    },
+                    onUnavailable = { showLockHelp = true },
+                )
             },
             onRequestExactAlarm = {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -128,6 +135,23 @@ fun SettingsScreen(container: AppContainer, modifier: Modifier = Modifier) {
         SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter))
     }
 
+    if (showLockHelp) {
+        AlertDialog(
+            onDismissRequest = { showLockHelp = false },
+            title = { Text(stringResource(R.string.lock_unavailable_title)) },
+            text = { Text(stringResource(R.string.lock_unavailable_explanation)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showLockHelp = false
+                    SecuritySettings.open(context)
+                }) { Text(stringResource(R.string.lock_open_security_settings)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLockHelp = false }) { Text(stringResource(R.string.lock_dialog_close)) }
+            },
+        )
+    }
+
     pendingImport?.let { uri ->
         ImportConfirmDialog(
             onConfirm = {
@@ -145,7 +169,6 @@ private fun messageRes(m: SettingsMessage): Int = when (m) {
     SettingsMessage.IMPORT_OK -> R.string.settings_msg_import_ok
     SettingsMessage.IMPORT_BAD_FORMAT -> R.string.settings_msg_import_bad_format
     SettingsMessage.IMPORT_FAILED -> R.string.settings_msg_import_failed
-    SettingsMessage.LOCK_UNAVAILABLE -> R.string.settings_msg_lock_unavailable
 }
 
 private fun Context.findFragmentActivity(): FragmentActivity? {
