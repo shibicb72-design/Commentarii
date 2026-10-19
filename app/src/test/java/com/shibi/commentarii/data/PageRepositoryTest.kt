@@ -17,6 +17,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import kotlinx.coroutines.flow.first
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35])
@@ -164,5 +165,107 @@ class PageRepositoryTest {
         assertFalse(repo.hasUserData())
         repo.setTitle(note.id, "Ideas")
         assertTrue(repo.hasUserData())
+    }
+
+    @Test
+    fun weeklyAndMonthlyPagesAreIdempotentSeededAndShareDatesWithDaily() = runBlocking {
+        val monday = LocalDate.of(2026, 10, 12)
+        val week = repo.getOrCreateWeekly(monday)
+        assertEquals(week.id, repo.getOrCreateWeekly(monday).id)
+        assertEquals("Week of Oct 12 \u2013 Oct 18 (W42)", week.title)
+        assertEquals(PageType.WEEKLY, week.type)
+        assertEquals(SectionKind.WEEKLY_KINDS, db.pageDao().getBlocks(week.id).map { it.kind })
+        assertEquals(BlockDocument.EMPTY.toJson(), db.pageDao().getBlocks(week.id).first { it.kind == SectionKind.NOTES }.payloadJson)
+        assertEquals("{}", db.pageDao().getBlocks(week.id).first { it.kind == SectionKind.GOALS }.payloadJson)
+
+        val first = LocalDate.of(2026, 10, 1)
+        val month = repo.getOrCreateMonthly(first)
+        assertEquals(month.id, repo.getOrCreateMonthly(first).id)
+        assertEquals("October 2026", month.title)
+        assertEquals(SectionKind.MONTHLY_KINDS, db.pageDao().getBlocks(month.id).map { it.kind })
+
+        // Daily pages on the same dates are separate pages.
+        assertTrue(repo.getOrCreateDaily(monday).id != week.id)
+        assertTrue(repo.getOrCreateDaily(first).id != month.id)
+        assertEquals(week.id, repo.getOrCreateWeekly(monday).id)
+    }
+
+    @Test
+    fun weeklyNeedsAMondayAndMonthlyTheFirst() = runBlocking {
+        try {
+            repo.getOrCreateWeekly(LocalDate.of(2026, 10, 13))
+            org.junit.Assert.fail("expected IllegalArgumentException")
+        } catch (_: IllegalArgumentException) {
+        }
+        try {
+            repo.getOrCreateMonthly(LocalDate.of(2026, 10, 2))
+            org.junit.Assert.fail("expected IllegalArgumentException")
+        } catch (_: IllegalArgumentException) {
+        }
+    }
+
+    @Test
+    fun observingAPeriodNeverCreatesIt() = runBlocking {
+        val monday = LocalDate.of(2026, 10, 12)
+        assertEquals(null, repo.observeWeekly(monday).first())
+        assertEquals(null, repo.observeMonthly(LocalDate.of(2026, 10, 1)).first())
+        assertEquals(null, db.pageDao().getPage(PageType.WEEKLY, monday))
+        val created = repo.getOrCreateWeekly(monday)
+        assertEquals(created.id, repo.observeWeekly(monday).first()?.id)
+    }
+
+    @Test
+    fun searchFindsWeeklyGoalMonthlyEventAndReviewText() = runBlocking {
+        val week = repo.getOrCreateWeekly(LocalDate.of(2026, 10, 12))
+        repo.saveTasks(
+            week.id,
+            TaskSection.GOALS,
+            listOf(TaskItemEntity(pageId = week.id, section = "", position = 0, text = "Marathon training")),
+        )
+        repo.saveBlockDocument(
+            week.id,
+            SectionKind.REVIEW_WELL,
+            BlockDocument(listOf(DocBlock(text = "Gratitude journalling worked"))),
+        )
+        val month = repo.getOrCreateMonthly(LocalDate.of(2026, 10, 1))
+        repo.saveEvents(month.id, EventList(listOf(EventItem(LocalDate.of(2026, 10, 20).toEpochDay(), "Wedding rehearsal"))))
+        repo.saveBlockDocument(month.id, SectionKind.REVIEW, BlockDocument(listOf(DocBlock(text = "Sluggish fortnight"))))
+
+        assertEquals(listOf(week.id), repo.search("marathon").map { it.id })
+        assertEquals(listOf(week.id), repo.search("journalling").map { it.id })
+        assertEquals(listOf(month.id), repo.search("rehearsal").map { it.id })
+        assertEquals(listOf(month.id), repo.search("sluggish").map { it.id })
+        assertEquals(listOf(week.id), repo.search("W42").map { it.id })
+        assertEquals(listOf(month.id), repo.search("october").map { it.id })
+        assertEquals(PageType.MONTHLY, repo.search("rehearsal").single().type)
+    }
+
+    @Test
+    fun eventsAreSavedSortedByDate() = runBlocking {
+        val month = repo.getOrCreateMonthly(LocalDate.of(2026, 10, 1))
+        val late = LocalDate.of(2026, 10, 28).toEpochDay()
+        val early = LocalDate.of(2026, 10, 3).toEpochDay()
+        repo.saveEvents(month.id, EventList(listOf(EventItem(late, "B"), EventItem(early, "A"))))
+        assertEquals(listOf("A", "B"), repo.getEvents(month.id).items.map { it.text })
+    }
+
+    @Test
+    fun contentDatesAndPeriodQueriesCoverTheRange() = runBlocking {
+        val d1 = LocalDate.of(2026, 10, 12)
+        val d2 = LocalDate.of(2026, 10, 13)
+        val d3 = LocalDate.of(2026, 10, 14)
+        val d4 = LocalDate.of(2026, 10, 15)
+        val p1 = repo.getOrCreateDaily(d1)
+        repo.getOrCreateDaily(d2) // blank page: no content
+        val p3 = repo.getOrCreateDaily(d3)
+        repo.saveTasks(p1.id, TaskSection.PRIORITY, listOf(TaskItemEntity(pageId = p1.id, section = "", position = 0, text = "Plan", done = true)))
+        repo.saveBlockDocument(p3.id, SectionKind.NOTES, BlockDocument(listOf(DocBlock(text = "thoughts"))))
+        repo.saveMood(d4, 3)
+        repo.getOrCreateDaily(d4)
+
+        val dates = repo.observeContentDates(d1, d4).first()
+        assertEquals(listOf(d1, d3, d4), dates)
+        assertEquals(listOf(DailyTaskRow(d1, TaskSection.PRIORITY, "Plan", true)), repo.observeDailyTasks(d1, d4).first())
+        assertEquals(listOf(3), repo.observeMoods(d1, d4).first().map { it.mood })
     }
 }

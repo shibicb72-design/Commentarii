@@ -38,6 +38,8 @@ import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import com.shibi.commentarii.data.EventItem
+import com.shibi.commentarii.data.EventList
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35])
@@ -174,5 +176,48 @@ class ExportImportRoundTripTest {
         }
         assertEquals(before, snapshot(a))
         assertEquals(1, a.repo.search("budg").size)
+    }
+
+    @Test
+    fun roundTripWithWeeklyAndMonthlyPagesIsIdentical() = runBlocking {
+        val a = newEnv()
+        populate(a)
+        val week = a.repo.getOrCreateWeekly(LocalDate.of(2026, 10, 12))
+        a.repo.saveTasks(
+            week.id,
+            TaskSection.GOALS,
+            listOf(TaskItemEntity(pageId = week.id, section = "", position = 0, text = "Marathon training", done = true)),
+        )
+        a.repo.saveBlockDocument(week.id, SectionKind.REVIEW_IMPROVE, BlockDocument(listOf(DocBlock(text = "Sleep earlier"))))
+        val month = a.repo.getOrCreateMonthly(LocalDate.of(2026, 10, 1))
+        a.repo.saveTasks(
+            month.id,
+            TaskSection.GOALS,
+            listOf(TaskItemEntity(pageId = month.id, section = "", position = 0, text = "Ship the release")),
+        )
+        a.repo.saveEvents(month.id, EventList(listOf(EventItem(LocalDate.of(2026, 10, 20).toEpochDay(), "Wedding rehearsal"))))
+        a.repo.saveBlockDocument(month.id, SectionKind.REVIEW, BlockDocument(listOf(DocBlock(text = "Sluggish fortnight"))))
+        a.repo.setPinned(week.id, true)
+        val json = a.io.export()
+
+        val b = newEnv()
+        b.io.import(json)
+
+        assertEquals(snapshot(a), snapshot(b))
+        assertEquals(json, b.io.export())
+        assertEquals(listOf(month.id), b.repo.search("rehearsal").map { it.id })
+        assertEquals(listOf(week.id), b.repo.search("earlier").map { it.id })
+        assertEquals(listOf(week.id), b.repo.search("marathon").map { it.id })
+    }
+
+    @Test
+    fun formatVersion1FileWithoutPeriodPagesStillImports() = runBlocking {
+        val a = newEnv()
+        populate(a)
+        val json = a.io.export()
+        assertEquals(1, org.json.JSONObject(json).getInt("formatVersion"))
+        val b = newEnv()
+        b.io.import(json)
+        assertEquals(snapshot(a), snapshot(b))
     }
 }

@@ -46,6 +46,7 @@ fun DailyPageContent(
         ) {
             if (banner != null) item { banner() }
             item { DailyHeader(state, actions) }
+            item { PeriodGoalsCard(state.weekGoals, state.monthGoals, actions.onOpenWeek, actions.onOpenMonth) }
             if (twoColumns) {
                 item {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {

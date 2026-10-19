@@ -29,6 +29,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.shibi.commentarii.AppContainer
 import java.time.LocalDate
+import java.time.YearMonth
 
 /** Daily page wired to [DailyViewModel]. [onSelectDate] navigates to another day. */
 @Composable
@@ -39,11 +40,15 @@ fun DailyPageScreen(
     windowWidthClass: WindowWidthSizeClass,
     modifier: Modifier = Modifier,
     banner: (@Composable () -> Unit)? = null,
+    onOpenWeek: (LocalDate) -> Unit = {},
+    onOpenMonth: (YearMonth) -> Unit = {},
 ) {
     val vm: DailyViewModel = viewModel(key = "daily-$date", factory = DailyViewModel.factory(container, date))
     val state by vm.state.collectAsStateWithLifecycle()
     LifecycleEventEffect(Lifecycle.Event.ON_STOP) { vm.flushNow() }
-    val actions = remember(vm, onSelectDate) { vm.buildActions(onSelectDate) }
+    val actions = remember(vm, onSelectDate, onOpenWeek, onOpenMonth) {
+        vm.buildActions(onSelectDate, onOpenWeek, onOpenMonth)
+    }
     val showReminder by vm.reminderVisible.collectAsStateWithLifecycle()
     val offer by vm.rollover.collectAsStateWithLifecycle()
     val blocked by container.notificationsBlocked.collectAsStateWithLifecycle()

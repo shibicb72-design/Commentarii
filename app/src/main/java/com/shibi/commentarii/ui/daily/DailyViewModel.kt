@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.shibi.commentarii.AppContainer
 import com.shibi.commentarii.data.BlockDocument
 import com.shibi.commentarii.data.DocBlock
+import com.shibi.commentarii.data.PageEntity
 import com.shibi.commentarii.data.ScheduleEntryEntity
 import com.shibi.commentarii.data.SectionKind
 import com.shibi.commentarii.data.TaskItemEntity
@@ -16,22 +17,29 @@ import com.shibi.commentarii.domain.applyRollover
 import com.shibi.commentarii.domain.computeRollover
 import com.shibi.commentarii.domain.shouldShowExportReminder
 import com.shibi.commentarii.domain.streaksFor
+import com.shibi.commentarii.domain.weekStart
 import java.time.LocalDate
+import java.time.YearMonth
 import java.util.concurrent.atomic.AtomicLong
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -179,6 +187,26 @@ class DailyViewModel(
         viewModelScope.launch {
             pages.observeMood(date).collect { m -> _state.update { it.copy(mood = m?.mood) } }
         }
+        viewModelScope.launch {
+            observeGoals(pages.observeWeekly(weekStart(date))).collect { goals -> _state.update { it.copy(weekGoals = goals) } }
+        }
+        viewModelScope.launch {
+            observeGoals(pages.observeMonthly(YearMonth.from(date).atDay(1))).collect { goals ->
+                _state.update { it.copy(monthGoals = goals) }
+            }
+        }
+    }
+
+    /** Non-blank goals of a week/month page; empty while that page does not exist (it is never created here). */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private fun observeGoals(page: Flow<PageEntity?>): Flow<List<PeriodGoal>> = page.flatMapLatest { p ->
+        if (p == null) {
+            flowOf(emptyList())
+        } else {
+            pages.observeTasks(p.id, TaskSection.GOALS).map { rows ->
+                rows.filter { it.text.isNotBlank() }.map { PeriodGoal(it.text, it.done) }
+            }
+        }
     }
 
     // ---- Editing ----
@@ -211,8 +239,14 @@ class DailyViewModel(
         },
     )
 
-    fun buildActions(onSelectDate: (LocalDate) -> Unit): DailyActions = DailyActions(
+    fun buildActions(
+        onSelectDate: (LocalDate) -> Unit,
+        onOpenWeek: (LocalDate) -> Unit = {},
+        onOpenMonth: (YearMonth) -> Unit = {},
+    ): DailyActions = DailyActions(
         onSelectDate = onSelectDate,
+        onOpenWeek = { onOpenWeek(weekStart(date)) },
+        onOpenMonth = { onOpenMonth(YearMonth.from(date)) },
         onTogglePin = {
             viewModelScope.launch { pages.setPinned(pageId, !_state.value.pinned) }
         },

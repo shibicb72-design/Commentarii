@@ -2,9 +2,10 @@ package com.shibi.commentarii.ui.lock
 
 import com.shibi.commentarii.ui.Routes
 import java.time.LocalDate
+import java.time.YearMonth
 
 /**
- * Remembers the navigation back stack (concrete routes such as `daily/2026-10-18` or `note/5`) while the app is locked,
+ * Remembers the navigation back stack (concrete routes such as `daily/2026-10-18`, `week/2026-10-12`, `month/2026-10` or `note/5`) while the app is locked,
  * so unlocking returns to the same screen. Only route strings are kept; no screen stays composed while locked.
  */
 object NavRestore {
@@ -26,6 +27,8 @@ object NavRestore {
     private fun isValid(route: String): Boolean = when {
         route == Routes.NOTES || route == Routes.SEARCH || route == Routes.SETTINGS || route == Routes.DEBUG -> true
         route.startsWith("daily/") -> runCatching { LocalDate.parse(route.removePrefix("daily/")) }.isSuccess
+        route.startsWith("week/") -> runCatching { LocalDate.parse(route.removePrefix("week/")) }.isSuccess
+        route.startsWith("month/") -> runCatching { YearMonth.parse(route.removePrefix("month/")) }.isSuccess
         route.startsWith("note/") -> route.removePrefix("note/").toLongOrNull() != null
         else -> false
     }

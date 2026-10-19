@@ -27,6 +27,12 @@ interface PageDao {
     @Query("SELECT * FROM pages WHERE type = 'DAILY' AND date = :date LIMIT 1")
     suspend fun getDaily(date: LocalDate): PageEntity?
 
+    @Query("SELECT * FROM pages WHERE type = :type AND date = :date LIMIT 1")
+    suspend fun getPage(type: String, date: LocalDate): PageEntity?
+
+    @Query("SELECT * FROM pages WHERE type = :type AND date = :date LIMIT 1")
+    fun observePage(type: String, date: LocalDate): Flow<PageEntity?>
+
     @Query("SELECT * FROM pages WHERE type = 'DAILY' AND date < :before ORDER BY date DESC LIMIT 1")
     suspend fun getLatestDailyBefore(before: LocalDate): PageEntity?
 
@@ -45,7 +51,7 @@ interface PageDao {
     @Query("SELECT COUNT(*) FROM moods")
     suspend fun moodCount(): Int
 
-    @Query("SELECT payloadJson FROM section_blocks WHERE kind IN ('NOTES', 'RICH_TEXT')")
+    @Query("SELECT payloadJson FROM section_blocks WHERE kind IN ('NOTES', 'RICH_TEXT', 'REVIEW_WELL', 'REVIEW_IMPROVE', 'REVIEW')")
     suspend fun getDocumentPayloads(): List<String>
 
     @Query("UPDATE pages SET updatedAt = :at WHERE id = :id")
@@ -118,11 +124,33 @@ interface PageDao {
     @Query("SELECT * FROM moods WHERE date = :date")
     fun observeMood(date: LocalDate): Flow<MoodEntity?>
 
+    @Query("SELECT * FROM moods WHERE date >= :from AND date <= :to ORDER BY date")
+    fun observeMoods(from: LocalDate, to: LocalDate): Flow<List<MoodEntity>>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertMood(mood: MoodEntity)
 
     @Query("DELETE FROM moods WHERE date = :date")
     suspend fun deleteMood(date: LocalDate)
+
+    // Week / month views (read only)
+    @Query(
+        "SELECT p.date AS date, t.section AS section, t.text AS text, t.done AS done " +
+            "FROM task_items t JOIN pages p ON p.id = t.pageId " +
+            "WHERE p.type = 'DAILY' AND p.date >= :from AND p.date <= :to ORDER BY p.date, t.section, t.position, t.id",
+    )
+    fun observeDailyTasks(from: LocalDate, to: LocalDate): Flow<List<DailyTaskRow>>
+
+    /** DAILY dates in the range with a non-blank task or schedule text, a non-empty NOTES document, or a mood. */
+    @Query(
+        "SELECT p.date FROM pages p WHERE p.type = 'DAILY' AND p.date >= :from AND p.date <= :to AND (" +
+            "EXISTS (SELECT 1 FROM task_items t WHERE t.pageId = p.id AND TRIM(t.text) != '') " +
+            "OR EXISTS (SELECT 1 FROM schedule_entries s WHERE s.pageId = p.id AND TRIM(s.text) != '') " +
+            "OR EXISTS (SELECT 1 FROM section_blocks b WHERE b.pageId = p.id AND b.kind = 'NOTES' " +
+            "AND b.payloadJson GLOB '*\"text\":\"[^\"]*') " +
+            "OR EXISTS (SELECT 1 FROM moods m WHERE m.date = p.date)) ORDER BY p.date",
+    )
+    fun observeContentDates(from: LocalDate, to: LocalDate): Flow<List<LocalDate>>
 
     // FTS
     @Query("DELETE FROM page_search WHERE rowid = :pageId")
@@ -263,6 +291,9 @@ interface PageDao {
     @Query("DELETE FROM page_search")
     suspend fun deleteAllFts()
 }
+
+/** One task of a DAILY page, for the week strip. */
+data class DailyTaskRow(val date: LocalDate, val section: String, val text: String, val done: Boolean)
 
 @Dao
 interface SelfCareDao {

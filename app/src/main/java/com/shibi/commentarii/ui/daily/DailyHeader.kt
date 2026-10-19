@@ -27,8 +27,6 @@ import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -40,7 +38,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -54,9 +51,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.shibi.commentarii.R
-import java.time.Instant
+import com.shibi.commentarii.ui.common.DatePickerDialogFor
 import java.time.LocalDate
-import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -86,25 +82,7 @@ fun DailyHeader(state: DailyUiState, actions: DailyActions, modifier: Modifier =
         PageChips(state, actions)
     }
     if (showDatePicker) {
-        val pickerState = rememberDatePickerState(
-            initialSelectedDateMillis = state.date.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli(),
-        )
-        DatePickerDialog(
-            onDismissRequest = { showDatePicker = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    showDatePicker = false
-                    pickerState.selectedDateMillis?.let {
-                        actions.onSelectDate(Instant.ofEpochMilli(it).atZone(ZoneOffset.UTC).toLocalDate())
-                    }
-                }) { Text(stringResource(R.string.action_ok)) }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) { Text(stringResource(R.string.action_cancel)) }
-            },
-        ) {
-            DatePicker(state = pickerState)
-        }
+        DatePickerDialogFor(state.date, onPick = actions.onSelectDate, onDismiss = { showDatePicker = false })
     }
 }
 

@@ -17,6 +17,8 @@ import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Today
+import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.ViewWeek
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -39,6 +41,8 @@ import com.shibi.commentarii.ui.theme.AppColors
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import java.time.format.TextStyle
+import java.util.Locale
 
 /** Search wired to [SearchViewModel]. [onOpenPage] gets (page type, page id, daily date or null). */
 @Composable
@@ -106,12 +110,36 @@ private fun Message(text: String) {
 @Composable
 private fun ResultCard(result: SearchResult, onClick: () -> Unit) {
     val colors = AppColors.current
-    val daily = result.type == PageType.DAILY
-    val title = if (daily && result.date != null) {
-        result.date.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL))
-    } else {
-        result.title.ifBlank { stringResource(R.string.nt_untitled) }
+    val monthName = result.date?.month?.getDisplayName(TextStyle.FULL_STANDALONE, Locale.getDefault()).orEmpty()
+    val title = when {
+        result.type == PageType.DAILY && result.date != null ->
+            result.date.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL))
+        result.type == PageType.WEEKLY && result.date != null -> {
+            val format = DateTimeFormatter.ofPattern("MMM d", Locale.getDefault())
+            stringResource(
+                R.string.week_title_fmt,
+                result.date.format(format),
+                result.date.plusDays(6).format(format),
+            )
+        }
+        result.type == PageType.MONTHLY && result.date != null ->
+            stringResource(R.string.month_title_fmt, monthName, result.date.year)
+        else -> result.title.ifBlank { stringResource(R.string.nt_untitled) }
     }
+    val icon = when (result.type) {
+        PageType.DAILY -> Icons.Filled.Today
+        PageType.WEEKLY -> Icons.Outlined.ViewWeek
+        PageType.MONTHLY -> Icons.Outlined.CalendarMonth
+        else -> Icons.Filled.EditNote
+    }
+    val typeLabel = stringResource(
+        when (result.type) {
+            PageType.DAILY -> R.string.sr_type_daily
+            PageType.WEEKLY -> R.string.sr_type_week
+            PageType.MONTHLY -> R.string.sr_type_month
+            else -> R.string.sr_type_note
+        },
+    )
     Surface(
         onClick = onClick,
         shape = RoundedCornerShape(16.dp),
@@ -120,10 +148,7 @@ private fun ResultCard(result: SearchResult, onClick: () -> Unit) {
         modifier = Modifier.fillMaxWidth(),
     ) {
         Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                if (daily) Icons.Filled.Today else Icons.Filled.EditNote,
-                contentDescription = stringResource(if (daily) R.string.sr_type_daily else R.string.sr_type_note),
-            )
+            Icon(icon, contentDescription = typeLabel)
             Text(
                 title,
                 style = MaterialTheme.typography.titleMedium,

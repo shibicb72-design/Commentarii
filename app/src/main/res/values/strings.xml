@@ -3,6 +3,8 @@
 
     <!-- Navigation -->
     <string name="tab_today">Today</string>
+    <string name="tab_week">Week</string>
+    <string name="tab_month">Month</string>
     <string name="tab_notes">Notes</string>
     <string name="tab_search">Search</string>
     <string name="tab_settings">Settings</string>
@@ -58,6 +60,39 @@
     <string name="daily_streak_badge">🔥%1$d</string>
     <string name="daily_streak_description">%1$d day streak</string>
 
+    <!-- Week and month pages -->
+    <string name="week_title_fmt">Week of %1$s – %2$s</string>
+    <string name="iso_week_fmt">ISO W%1$d</string>
+    <string name="month_title_fmt">%1$s %2$d</string>
+    <string name="week_previous">Previous week</string>
+    <string name="week_next">Next week</string>
+    <string name="month_previous">Previous month</string>
+    <string name="month_next">Next month</string>
+    <string name="section_goals">Goals</string>
+    <string name="section_week_days">The Week</string>
+    <string name="section_mood_week">Mood</string>
+    <string name="section_calendar">Calendar</string>
+    <string name="section_events">Events</string>
+    <string name="section_review">Review</string>
+    <string name="section_review_well">What Went Well</string>
+    <string name="section_review_improve">What To Improve</string>
+    <string name="goal_hint">Goal %1$d</string>
+    <string name="review_hint">Write a few lines</string>
+    <string name="event_hint">Event</string>
+    <string name="event_add">Add event</string>
+    <string name="week_day_empty">Nothing planned</string>
+    <string name="week_todo_fmt">%1$d/%2$d to-dos done</string>
+    <string name="mood_none">No mood</string>
+    <string name="month_day_has_entries">has entries</string>
+    <string name="habit_summary_fmt">%1$d/%2$d</string>
+    <string name="habit_summary_none">-</string>
+    <string name="habit_summary_empty">No habits yet. Add them on the daily page.</string>
+    <string name="period_card_title">This week &amp; month</string>
+    <string name="period_card_week">This week</string>
+    <string name="period_card_month">This month</string>
+    <string name="period_card_expand">Show goals</string>
+    <string name="period_card_collapse">Hide goals</string>
+
     <!-- Mood -->
     <string name="mood_5">Very happy</string>
     <string name="mood_4">Happy</string>
@@ -111,6 +146,8 @@
     <string name="sr_no_results">Nothing found.</string>
     <string name="sr_type_daily">Daily page</string>
     <string name="sr_type_note">Note</string>
+    <string name="sr_type_week">Weekly page</string>
+    <string name="sr_type_month">Monthly page</string>
 
     <!-- Settings -->
     <string name="settings_section_privacy">Privacy</string>
