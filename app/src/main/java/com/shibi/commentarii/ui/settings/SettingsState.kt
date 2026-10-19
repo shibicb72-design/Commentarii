@@ -1,6 +1,7 @@
 package com.shibi.commentarii.ui.settings
 
 import com.shibi.commentarii.data.DarkMode
+import com.shibi.commentarii.ui.theme.AppThemes
 import java.time.Instant
 import java.time.LocalDate
 
@@ -16,6 +17,9 @@ data class SettingsUiState(
     val exportReminderEnabled: Boolean = true,
     val lastExportAt: Instant? = null,
     val darkMode: DarkMode = DarkMode.SYSTEM,
+    val themeId: String = AppThemes.DEFAULT_ID,
+    /** Ids of animated themes the user switched to "Off"; absent means Animated. */
+    val staticThemeIds: Set<String> = emptySet(),
     val licenseText: String = "",
     val message: SettingsMessage? = null,
 )
@@ -31,6 +35,8 @@ data class SettingsCallbacks(
     val onExport: () -> Unit = {},
     val onImport: () -> Unit = {},
     val onDarkMode: (DarkMode) -> Unit = {},
+    val onThemeSelect: (String) -> Unit = {},
+    val onThemeAnimated: (String, Boolean) -> Unit = { _, _ -> },
 )
 
 fun backupFileName(date: LocalDate): String = "commentarii-backup-$date.json"

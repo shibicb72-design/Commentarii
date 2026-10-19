@@ -34,6 +34,7 @@ import com.shibi.commentarii.ui.lock.NavRestore
 import com.shibi.commentarii.ui.lock.SecuritySettings
 import com.shibi.commentarii.ui.lock.UnlockAction
 import com.shibi.commentarii.ui.lock.unlockAction
+import com.shibi.commentarii.ui.theme.AppThemes
 import com.shibi.commentarii.ui.theme.CommentariiTheme
 import java.time.LocalDate
 
@@ -64,6 +65,10 @@ class MainActivity : AppCompatActivity() {
             }
             // null until the setting has loaded, so nothing is shown before we know whether to lock.
             val lockEnabled by container.settings.lockEnabled.collectAsStateWithLifecycle<Boolean?>(null)
+            // null until loaded, so the default theme never flashes before the saved one.
+            val themeId by container.settings.themeId.collectAsStateWithLifecycle<String?>(null)
+            val staticThemeIds by container.settings.staticThemeIds.collectAsStateWithLifecycle(emptySet())
+            val appTheme = AppThemes.byId(themeId)
             val locked by container.lock.locked.collectAsStateWithLifecycle()
             val askNotifications by container.notificationPermissionRequest.collectAsStateWithLifecycle()
             val showLock = lockEnabled == true && locked
@@ -96,9 +101,13 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             }
-            CommentariiTheme(dark = dark) {
+            CommentariiTheme(
+                dark = dark,
+                theme = appTheme,
+                animate = appTheme.animated && appTheme.id !in staticThemeIds,
+            ) {
                 when {
-                    lockEnabled == null -> Surface(
+                    lockEnabled == null || themeId == null -> Surface(
                         modifier = Modifier.fillMaxSize(),
                         color = MaterialTheme.colorScheme.background,
                     ) {}

@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
@@ -19,6 +18,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.shibi.commentarii.R
+import com.shibi.commentarii.ui.theme.ThemedPage
 
 /**
  * Stateless daily page. Compact width: one scrolling column of all sections.
@@ -34,11 +34,7 @@ fun DailyPageContent(
     banner: (@Composable () -> Unit)? = null,
 ) {
     val twoColumns = windowWidthClass != WindowWidthSizeClass.Compact
-    Surface(
-        modifier = modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background,
-        contentColor = MaterialTheme.colorScheme.onBackground,
-    ) {
+    ThemedPage(modifier.fillMaxSize()) {
         LazyColumn(
             Modifier.fillMaxSize(),
             contentPadding = PaddingValues(16.dp),

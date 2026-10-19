@@ -31,6 +31,7 @@ import com.shibi.commentarii.ui.notes.NotesActions
 import com.shibi.commentarii.ui.notes.NotesListContent
 import com.shibi.commentarii.ui.notes.sampleNoteEditorUiState
 import com.shibi.commentarii.ui.notes.sampleNotesUiState
+import com.shibi.commentarii.ui.theme.AppThemes
 import com.shibi.commentarii.ui.theme.CommentariiTheme
 import com.shibi.commentarii.ui.week.WeekActions
 import com.shibi.commentarii.ui.week.WeekPageContent
@@ -69,6 +70,26 @@ class ScreenshotTest {
     @Test fun dailyDarkCompact() = daily("daily_dark_compact", compact, true, WindowWidthSizeClass.Compact)
     @Test fun dailyLightExpanded() = daily("daily_light_expanded", expanded, false, WindowWidthSizeClass.Expanded)
     @Test fun dailyDarkExpanded() = daily("daily_dark_expanded", expanded, true, WindowWidthSizeClass.Expanded)
+
+    // One Daily shot per theme; animate = false keeps the frames deterministic.
+    private fun themedDaily(id: String) {
+        RuntimeEnvironment.setQualifiers(compact)
+        rule.setContent {
+            CommentariiTheme(dark = false, theme = AppThemes.byId(id), animate = false) {
+                DailyPageContent(sampleDailyUiState(), DailyActions(), WindowWidthSizeClass.Compact)
+            }
+        }
+        rule.onRoot().captureRoboImage("build/outputs/roborazzi/daily_theme_$id.png")
+    }
+
+    @Test fun dailyThemeRoseCream() = themedDaily("rose_cream")
+    @Test fun dailyThemeWashiPlanner() = themedDaily("washi_planner")
+    @Test fun dailyThemeSunnyJournal() = themedDaily("sunny_journal")
+    @Test fun dailyThemeCloudDrift() = themedDaily("cloud_drift")
+    @Test fun dailyThemePetalFall() = themedDaily("petal_fall")
+    @Test fun dailyThemeFloatingHearts() = themedDaily("floating_hearts")
+    @Test fun dailyThemeMatchaTea() = themedDaily("matcha_tea")
+    @Test fun dailyThemeLavenderMoon() = themedDaily("lavender_moon")
 
     private fun week(name: String, q: String, dark: Boolean, width: WindowWidthSizeClass) =
         shoot(name, q, dark) { WeekPageContent(sampleWeekUiState(), WeekActions(), width) }

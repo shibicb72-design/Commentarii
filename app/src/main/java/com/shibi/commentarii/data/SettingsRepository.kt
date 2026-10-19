@@ -6,12 +6,15 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import java.time.Instant
 import java.time.LocalDate
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 enum class DarkMode { SYSTEM, LIGHT, DARK }
+
+const val DEFAULT_THEME_ID = "rose_cream"
 
 class SettingsRepository(private val store: DataStore<Preferences>) {
 
@@ -23,6 +26,8 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         val reminderDismissedAt = longPreferencesKey("reminder_dismissed_at")
         val darkMode = stringPreferencesKey("dark_mode")
         val notificationsAsked = booleanPreferencesKey("notifications_asked")
+        val themeId = stringPreferencesKey("theme_id")
+        val staticThemeIds = stringSetPreferencesKey("theme_static_ids")
     }
 
     val lockEnabled: Flow<Boolean> = store.data.map { it[Keys.lockEnabled] ?: false }
@@ -33,6 +38,22 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         store.data.map { p -> p[Keys.reminderDismissedAt]?.let { Instant.ofEpochMilli(it) } }
     val darkMode: Flow<DarkMode> = store.data.map { p ->
         p[Keys.darkMode]?.let { runCatching { DarkMode.valueOf(it) }.getOrNull() } ?: DarkMode.SYSTEM
+    }
+
+    val themeId: Flow<String> = store.data.map { it[Keys.themeId] ?: DEFAULT_THEME_ID }
+
+    /** Ids of animated themes the user switched to "Off"; absent means Animated. */
+    val staticThemeIds: Flow<Set<String>> = store.data.map { it[Keys.staticThemeIds] ?: emptySet() }
+
+    suspend fun setThemeId(id: String) {
+        store.edit { it[Keys.themeId] = id }
+    }
+
+    suspend fun setThemeAnimated(id: String, animated: Boolean) {
+        store.edit {
+            val current = it[Keys.staticThemeIds] ?: emptySet()
+            it[Keys.staticThemeIds] = if (animated) current - id else current + id
+        }
     }
 
     /** True once the POST_NOTIFICATIONS prompt has been shown (it is only requested once, lazily). */
