@@ -3,6 +3,7 @@ package com.shibi.commentarii
 import android.app.Application
 import android.content.Context
 import androidx.datastore.preferences.preferencesDataStore
+import com.shibi.commentarii.backup.ExportImport
 import com.shibi.commentarii.data.CommentariiDatabase
 import com.shibi.commentarii.data.PageRepository
 import com.shibi.commentarii.data.SelfCareRepository
@@ -20,6 +21,7 @@ class AppContainer(context: Context) {
     val pages = PageRepository(db, clock, zone)
     val selfCare = SelfCareRepository(db)
     val settings = SettingsRepository(context.applicationContext.settingsDataStore)
+    val exportImport = ExportImport(db, settings, pages)
 }
 
 class CommentariiApp : Application() {

@@ -20,6 +20,9 @@ class PageRepository(
 
     suspend fun getPage(id: Long): PageEntity? = dao.getPage(id)
 
+    /** True when there is more than the automatically created current page. */
+    suspend fun hasUserData(): Boolean = dao.pageCount() > 1
+
     fun observePage(id: Long): Flow<PageEntity?> = dao.observePage(id)
 
     fun observeNotes(): Flow<List<PageEntity>> = dao.observeNotes()

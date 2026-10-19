@@ -1,3 +1,156 @@
 <resources>
     <string name="app_name">Commentarii</string>
+
+    <!-- Navigation -->
+    <string name="tab_today">Today</string>
+    <string name="tab_notes">Notes</string>
+    <string name="tab_search">Search</string>
+    <string name="tab_settings">Settings</string>
+
+    <!-- Placeholders (filled in by later work) -->
+    <string name="placeholder_notes">Notes</string>
+    <string name="placeholder_note_editor">Note editor</string>
+    <string name="placeholder_search">Search</string>
+
+    <!-- Lock -->
+    <string name="lock_unlock">Unlock</string>
+    <string name="icon_flower">Commentarii flower</string>
+
+    <!-- Daily page: sections -->
+    <string name="section_priorities">Today\'s Top Priorities</string>
+    <string name="section_todo">To-Do List</string>
+    <string name="section_schedule">Schedule</string>
+    <string name="section_dont_forget">Don\'t Forget</string>
+    <string name="section_grateful">Today I Am Grateful For</string>
+    <string name="section_self_care">Self Care</string>
+    <string name="section_mood">Today\'s Mood</string>
+    <string name="section_notes">Notes</string>
+    <string name="daily_footer">You\'ve got this!</string>
+
+    <!-- Daily page: header -->
+    <string name="daily_pick_date">Pick a date</string>
+    <string name="daily_pin">Pin page</string>
+    <string name="daily_unpin">Unpin page</string>
+    <string name="daily_no_folder">No folder</string>
+    <string name="daily_new_folder">New folder</string>
+    <string name="daily_add_tag">Tag</string>
+    <string name="daily_new_tag">New tag</string>
+    <string name="daily_remove_tag">Remove tag %1$s</string>
+    <string name="daily_name_hint">Name</string>
+
+    <!-- Daily page: fields -->
+    <string name="daily_priority_hint">Priority %1$d</string>
+    <string name="daily_todo_hint">To-do</string>
+    <string name="daily_dont_forget_hint">Remember</string>
+    <string name="daily_grateful_hint">I am grateful for</string>
+    <string name="daily_schedule_hint">Plan</string>
+    <string name="daily_notes_hint">Write anything here</string>
+    <string name="daily_add_item">Add item</string>
+    <string name="daily_add_line">Add line</string>
+    <string name="daily_custom_time">Custom time</string>
+    <string name="daily_done">Done</string>
+    <string name="daily_move_up">Move up</string>
+    <string name="daily_move_down">Move down</string>
+    <string name="daily_remove">Remove</string>
+    <string name="daily_rename">Rename</string>
+    <string name="daily_confirm">Confirm</string>
+    <string name="daily_self_care_hint">Self care habit</string>
+    <string name="daily_streak_badge">🔥%1$d</string>
+    <string name="daily_streak_description">%1$d day streak</string>
+
+    <!-- Mood -->
+    <string name="mood_5">Very happy</string>
+    <string name="mood_4">Happy</string>
+    <string name="mood_3">Neutral</string>
+    <string name="mood_2">Sad</string>
+    <string name="mood_1">Very sad</string>
+
+    <!-- Dialogs -->
+    <string name="action_ok">OK</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_add">Add</string>
+    <string name="action_done">Done</string>
+
+    <!-- Notes list -->
+    <string name="nt_title">Notes</string>
+    <string name="nt_new">New note</string>
+    <string name="nt_untitled">Untitled</string>
+    <string name="nt_all">All</string>
+    <string name="nt_empty">No notes yet. Tap + to write one.</string>
+    <string name="nt_empty_filtered">No notes match this filter.</string>
+    <string name="nt_pinned">Pinned</string>
+
+    <!-- Note editor -->
+    <string name="ed_back">Back</string>
+    <string name="ed_title_hint">Title</string>
+    <string name="ed_body_hint">Start writing...</string>
+    <string name="ed_bold">Bold</string>
+    <string name="ed_h1">Heading 1</string>
+    <string name="ed_h2">Heading 2</string>
+    <string name="ed_bullet">Bullet list</string>
+    <string name="ed_checkbox">Checklist</string>
+    <string name="ed_pin">Pin note</string>
+    <string name="ed_unpin">Unpin note</string>
+    <string name="ed_organize">Folder and tags</string>
+    <string name="ed_delete">Delete note</string>
+    <string name="ed_delete_title">Delete this note?</string>
+    <string name="ed_delete_message">This cannot be undone.</string>
+    <string name="ed_not_found">This note no longer exists.</string>
+    <string name="ed_folder">Folder</string>
+    <string name="ed_no_folder">No folder</string>
+    <string name="ed_new_folder">New folder</string>
+    <string name="ed_tags">Tags</string>
+    <string name="ed_new_tag">New tag</string>
+    <string name="ed_add_folder_tag">Add folder or tag</string>
+
+    <!-- Search -->
+    <string name="sr_hint">Search days and notes</string>
+    <string name="sr_clear">Clear search</string>
+    <string name="sr_prompt">Type to search your days and notes.</string>
+    <string name="sr_no_results">Nothing found.</string>
+    <string name="sr_type_daily">Daily page</string>
+    <string name="sr_type_note">Note</string>
+
+    <!-- Settings -->
+    <string name="settings_section_privacy">Privacy</string>
+    <string name="settings_lock">Fingerprint lock</string>
+    <string name="settings_lock_hint">Ask for your fingerprint or device lock when opening the app.</string>
+    <string name="settings_section_backup">Backup</string>
+    <string name="settings_export_reminder">Export reminder</string>
+    <string name="settings_export_reminder_hint">Remind me to export a backup every 14 days.</string>
+    <string name="settings_export">Export</string>
+    <string name="settings_import">Import</string>
+    <string name="settings_never_exported">Never exported.</string>
+    <string name="settings_last_export">Last export: %1$s</string>
+    <string name="settings_section_theme">Theme</string>
+    <string name="settings_theme_system">Follow system</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_add_self_care">Add self care item</string>
+    <string name="settings_section_licences">Licences</string>
+    <string name="settings_licence_font">Dancing Script font, SIL Open Font License 1.1.</string>
+    <string name="settings_licence_show">Show licence text</string>
+    <string name="settings_licence_hide">Hide licence text</string>
+    <string name="settings_import_title">Import backup?</string>
+    <string name="settings_import_message">Importing replaces all data currently in the app. This cannot be undone.</string>
+    <string name="settings_import_confirm">Replace all data</string>
+    <string name="settings_msg_export_ok">Backup exported.</string>
+    <string name="settings_msg_export_failed">Export failed.</string>
+    <string name="settings_msg_import_ok">Backup imported.</string>
+    <string name="settings_msg_import_bad_format">That file is not a valid Commentarii backup.</string>
+    <string name="settings_msg_import_failed">Import failed. Nothing was changed.</string>
+
+    <!-- Export reminder banner -->
+    <string name="reminder_text">It has been a while since your last backup. Export one from Settings.</string>
+    <string name="reminder_dismiss">Dismiss</string>
+
+    <!-- Rollover dialog -->
+    <string name="rollover_title">Carry over %1$d unfinished items from %2$s?</string>
+    <string name="rollover_title_one">Carry over 1 unfinished item from %1$s?</string>
+    <string name="rollover_move_all">Move all</string>
+    <string name="rollover_pick">Pick…</string>
+    <string name="rollover_skip">Skip</string>
+    <string name="rollover_pick_title">Choose items to carry over</string>
+    <string name="rollover_move_selected">Move selected</string>
 </resources>
