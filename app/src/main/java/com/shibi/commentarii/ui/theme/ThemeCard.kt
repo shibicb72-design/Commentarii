@@ -34,6 +34,7 @@ class CardDecor(
     val sticker: Boolean,
     val shadowInk: Color,
     val tilt: Float = 8f,
+    val stickerScale: Float = 1f,
 )
 
 private val plannerStickers = listOf(
@@ -101,6 +102,7 @@ fun cardDecor(themeId: String, art: ThemeArt, colors: ArtColors, title: String):
         sticker = themeId == "washi_planner" || themeId == "sunny_journal",
         shadowInk = colors.ink,
         tilt = if (idx % 2 == 0) 8f else -8f,
+        stickerScale = if (themeId == "lavender_moon") 1.6f else 1f,
     )
 }
 
@@ -111,8 +113,8 @@ fun cardDecor(themeId: String, art: ThemeArt, colors: ArtColors, title: String):
 fun Modifier.themedCard(decor: CardDecor, shape: Shape): Modifier = drawWithCache {
     val outline = shape.createOutline(size, layoutDirection, this)
     val s1 = 1.dp.toPx()
-    val stickerSize = 40.dp.toPx()
-    val stickerAt = Offset(size.width - 26.dp.toPx(), -12.dp.toPx())
+    val stickerSize = 40.dp.toPx() * decor.stickerScale
+    val stickerAt = Offset(size.width - 26.dp.toPx() * decor.stickerScale, -12.dp.toPx() * decor.stickerScale)
     val tapeAt = Offset(size.width - 2.dp.toPx(), size.height - 2.dp.toPx())
     val tapeLen = 52.dp.toPx()
     val tapeThick = 16.dp.toPx()

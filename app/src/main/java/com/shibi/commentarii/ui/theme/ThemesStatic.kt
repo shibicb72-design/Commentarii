@@ -5,8 +5,12 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.PathOperation
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.Density
@@ -51,7 +55,7 @@ private val MatchaDark by lazy {
 }
 private val LavenderLight = Palette(
     0xFFF4F0FB, 0xFF272235, 0xFF6A5AA8, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFDDD6EC,
-    listOf(0xFFDCD3F2, 0xFFC9D6F2, 0xFFF2D3E4, 0xFFD6EEF0, 0xFFF6E7C1), 0xFF272235, emptyList(),
+    listOf(0xFFCDBEF2, 0xFFB5E6CF, 0xFFFFCBAE), 0xFF272235, emptyList(),
 )
 private val LavenderDark by lazy {
     Palette(
@@ -214,8 +218,18 @@ private val ConstellationPts = listOf(
     0.05f to 0.13f, 0.10f to 0.17f, 0.07f to 0.22f, 0.13f to 0.25f, 0.04f to 0.28f,
     0.92f to 0.42f, 0.96f to 0.46f, 0.90f to 0.50f, 0.95f to 0.54f, 0.91f to 0.58f, 0.97f to 0.60f,
     0.04f to 0.67f, 0.09f to 0.71f, 0.05f to 0.75f, 0.11f to 0.78f, 0.06f to 0.82f,
+    // extra groups so the sky runs the full content height: right 0.20h, left 0.40h, right 0.76h
+    0.93f to 0.20f, 0.97f to 0.24f, 0.92f to 0.28f, 0.96f to 0.31f,
+    0.03f to 0.38f, 0.08f to 0.42f, 0.04f to 0.47f, 0.10f to 0.50f,
+    0.92f to 0.72f, 0.96f to 0.76f, 0.91f to 0.80f, 0.97f to 0.83f,
 )
-private val ConstellationGroups = listOf(0..4, 5..10, 11..15)
+private val ConstellationGroups = listOf(0..4, 5..10, 11..15, 16..19, 20..23, 24..27)
+
+/** Twinkling 4-point sparkles in the side gutters: x fraction, y fraction, size dp. */
+private val GutterSparkles = listOf(
+    0.04f to 0.06f, 0.95f to 0.14f, 0.06f to 0.33f, 0.96f to 0.38f, 0.05f to 0.55f,
+    0.94f to 0.64f, 0.07f to 0.62f, 0.95f to 0.89f, 0.04f to 0.88f, 0.11f to 0.46f,
+)
 
 private val LavenderDeco = ThemeDecoration { size, density, dark ->
     val s = Scene(size, density, dark, "lavender_moon")
@@ -246,6 +260,33 @@ private val LavenderDeco = ThemeDecoration { size, density, dark ->
             for ((i, p) in ConstellationPts.withIndex()) {
                 drawGlyph(Glyph.STAR, Offset(w * p.first, h * p.second), (9f + (i % 3) * 2f) * dp, deep(acc[4]).copy(alpha = 0.8f * c.decoAlpha))
             }
+            for ((i, p) in GutterSparkles.withIndex()) {
+                val twinkle = (if (i % 2 == 0) 1f else 0.75f) * (13f + (i % 3) * 4f) * dp * s.widthScale
+                drawGlyph(
+                    Glyph.SPARKLE, Offset(w * p.first, h * p.second), twinkle,
+                    deep(if (i % 3 == 0) Gold else acc[4]).copy(alpha = 0.9f * c.decoAlpha),
+                )
+            }
+            // sleeping crescent moon tucked in the top-right corner, clear of the header text
+            val cr = 15f * dp * s.widthScale
+            val cc = Offset(w * 0.93f, h * 0.045f)
+            val crescent = Path().apply {
+                addOval(Rect(cc.x - cr, cc.y - cr, cc.x + cr, cc.y + cr))
+            }
+            val bite = Path().apply {
+                addOval(Rect(cc.x - cr * 0.55f, cc.y - cr * 1.15f, cc.x + cr * 1.25f, cc.y + cr * 0.95f))
+            }
+            val moonShape = Path.combine(PathOperation.Difference, crescent, bite)
+            val moonCol = lerp(Gold, c.paper, 0.15f)
+            drawPath(moonShape, moonCol.copy(alpha = 0.85f * c.decoAlpha))
+            drawPath(moonShape, c.ink.copy(alpha = 0.6f * c.decoAlpha), style = Stroke(1.4f * dp))
+            // closed sleeping eye + cheek on the crescent body
+            drawArc(
+                c.ink.copy(alpha = 0.7f * c.decoAlpha), 15f, 150f, false,
+                Offset(cc.x - cr * 0.78f, cc.y - cr * 0.2f), Size(cr * 0.4f, cr * 0.3f), style = Stroke(1.3f * dp, cap = StrokeCap.Round),
+            )
+            drawCircle(acc[2].copy(alpha = 0.7f * c.decoAlpha), cr * 0.12f, Offset(cc.x - cr * 0.75f, cc.y + cr * 0.3f))
+            drawGlyph(Glyph.STAR, Offset(cc.x - cr * 1.7f, cc.y + cr * 0.9f), 8f * dp, deep(Gold).copy(alpha = 0.8f * c.decoAlpha))
             val pop = listOf(acc[0], acc[1], acc[2], acc[4]).map { deep(it) }
             drawScatter(
                 97, n(8), listOf(Glyph.SPARKLE), listOf(Gold, acc[4]).map { deep(it) }, whole, avoid, 0.5f * c.decoAlpha,
