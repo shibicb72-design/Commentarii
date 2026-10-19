@@ -29,3 +29,5 @@ In `claude -p`, `opusplan` falls back to Sonnet, so Opus is invoked explicitly p
 4. FIX `claude -p --model sonnet` only if the review lists fixes.
 After every run: `claude -p "/usage"` (free) and record session/week % plus per-model cost (from `--output-format json` `modelUsage`) in METRICS.md.
 All subagents run in the foreground; headless stops background subagents after 10 min (`CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0` to wait).
+
+- Large features: split IMPLEMENT into 2-3 fresh Sonnet runs (data/domain, UI, tests/screenshots). One 99-turn run re-read 12.5M cache tokens (v2, Oct 19 2026).

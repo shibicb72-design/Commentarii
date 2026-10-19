@@ -14,6 +14,7 @@ import com.shibi.commentarii.data.BlockType
 import com.shibi.commentarii.data.DocBlock
 import com.shibi.commentarii.ui.daily.DailyActions
 import com.shibi.commentarii.ui.daily.DontForgetCard
+import com.shibi.commentarii.ui.daily.PeriodGoal
 import com.shibi.commentarii.ui.daily.SelfCareCard
 import com.shibi.commentarii.ui.daily.SelfCareUi
 import com.shibi.commentarii.ui.daily.TaskListActions
@@ -22,6 +23,9 @@ import com.shibi.commentarii.ui.daily.TodoCard
 import com.shibi.commentarii.ui.daily.DailyPageContent
 import com.shibi.commentarii.ui.daily.sampleDailyUiState
 import com.shibi.commentarii.ui.lock.LockScreen
+import com.shibi.commentarii.ui.month.MonthActions
+import com.shibi.commentarii.ui.month.MonthPageContent
+import com.shibi.commentarii.ui.month.sampleMonthUiState
 import com.shibi.commentarii.ui.notes.EditorBlock
 import com.shibi.commentarii.ui.notes.NoteEditorActions
 import com.shibi.commentarii.ui.notes.NoteEditorContent
@@ -30,6 +34,9 @@ import com.shibi.commentarii.ui.notes.NotesListContent
 import com.shibi.commentarii.ui.notes.sampleNoteEditorUiState
 import com.shibi.commentarii.ui.notes.sampleNotesUiState
 import com.shibi.commentarii.ui.theme.CommentariiTheme
+import com.shibi.commentarii.ui.week.WeekActions
+import com.shibi.commentarii.ui.week.WeekPageContent
+import com.shibi.commentarii.ui.week.sampleWeekUiState
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -64,6 +71,30 @@ class ScreenshotTest {
     @Test fun dailyDarkCompact() = daily("daily_dark_compact", compact, true, WindowWidthSizeClass.Compact)
     @Test fun dailyLightExpanded() = daily("daily_light_expanded", expanded, false, WindowWidthSizeClass.Expanded)
     @Test fun dailyDarkExpanded() = daily("daily_dark_expanded", expanded, true, WindowWidthSizeClass.Expanded)
+
+    private fun week(name: String, q: String, dark: Boolean, width: WindowWidthSizeClass) =
+        shoot(name, q, dark) { WeekPageContent(sampleWeekUiState(), WeekActions(), width) }
+
+    private fun month(name: String, q: String, dark: Boolean, width: WindowWidthSizeClass) =
+        shoot(name, q, dark) { MonthPageContent(sampleMonthUiState(), MonthActions(), width) }
+
+    @Test fun weekLightCompact() = week("week_light_compact", compact, false, WindowWidthSizeClass.Compact)
+    @Test fun weekDarkCompact() = week("week_dark_compact", compact, true, WindowWidthSizeClass.Compact)
+    @Test fun weekLightExpanded() = week("week_light_expanded", expanded, false, WindowWidthSizeClass.Expanded)
+    @Test fun weekDarkExpanded() = week("week_dark_expanded", expanded, true, WindowWidthSizeClass.Expanded)
+
+    @Test fun monthLightCompact() = month("month_light_compact", compact, false, WindowWidthSizeClass.Compact)
+    @Test fun monthDarkCompact() = month("month_dark_compact", compact, true, WindowWidthSizeClass.Compact)
+    @Test fun monthLightExpanded() = month("month_light_expanded", expanded, false, WindowWidthSizeClass.Expanded)
+    @Test fun monthDarkExpanded() = month("month_dark_expanded", expanded, true, WindowWidthSizeClass.Expanded)
+
+    @Test fun dailyPeriodCardLightCompact() = shoot("daily_period_card_light_compact", phone, false) {
+        val state = sampleDailyUiState().copy(
+            weekGoals = listOf(PeriodGoal("Ship the v2 release", done = true), PeriodGoal("Run three times")),
+            monthGoals = listOf(PeriodGoal("Plan the winter trip"), PeriodGoal("Read four books")),
+        )
+        DailyPageContent(state, DailyActions(), WindowWidthSizeClass.Compact)
+    }
 
     @Test fun notesListLight() = shoot("notes_list_light", phone, false) {
         NotesListContent(sampleNotesUiState(), NotesActions())

@@ -42,4 +42,18 @@ class NavRestoreTest {
         assertEquals(routes, NavRestore.sanitize(routes))
         assertEquals(routes, NavRestore.decode(NavRestore.encode(routes)))
     }
+
+    @Test
+    fun weekAndMonthRoutesAreAccepted() {
+        val routes = listOf("daily/2026-10-18", "week/2026-10-12", "month/2026-10")
+        assertEquals(routes, NavRestore.sanitize(routes))
+        assertEquals(routes, NavRestore.decode(NavRestore.encode(routes)))
+        assertEquals(listOf(RestoreStep("week/2026-10-12", false)), NavRestore.plan(listOf("week/2026-10-12")))
+    }
+
+    @Test
+    fun malformedWeekAndMonthRoutesAreDropped() {
+        val routes = listOf("week/", "week/nope", "week/{mondayDate}", "month/2026-13", "month/2026-1", "month/{yearMonth}", "month/")
+        assertEquals(emptyList<String>(), NavRestore.sanitize(routes))
+    }
 }

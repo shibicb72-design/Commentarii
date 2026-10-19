@@ -14,6 +14,8 @@ import java.time.LocalDate
 object PageType {
     const val DAILY = "DAILY"
     const val NOTE = "NOTE"
+    const val WEEKLY = "WEEKLY"
+    const val MONTHLY = "MONTHLY"
     // Future: WEEKLY_PAYMENTS, TRAVEL, JOURNAL
 }
 
@@ -27,8 +29,18 @@ object SectionKind {
     const val MOOD = "MOOD"
     const val NOTES = "NOTES"
     const val RICH_TEXT = "RICH_TEXT"
+    const val GOALS = "GOALS"
+    const val EVENTS = "EVENTS"
+    const val REVIEW_WELL = "REVIEW_WELL"
+    const val REVIEW_IMPROVE = "REVIEW_IMPROVE"
+    const val REVIEW = "REVIEW"
 
     val DAILY_KINDS = listOf(PRIORITIES, TODO, SCHEDULE, DONT_FORGET, GRATEFUL, SELF_CARE, MOOD, NOTES)
+    val WEEKLY_KINDS = listOf(GOALS, TODO, DONT_FORGET, SELF_CARE, MOOD, NOTES, REVIEW_WELL, REVIEW_IMPROVE)
+    val MONTHLY_KINDS = listOf(GOALS, EVENTS, TODO, SELF_CARE, NOTES, REVIEW)
+
+    /** Kinds whose payload is a [BlockDocument] (or, for EVENTS, an event list) and so is flattened into search. */
+    val DOCUMENT_KINDS = setOf(NOTES, RICH_TEXT, REVIEW_WELL, REVIEW_IMPROVE, REVIEW)
 }
 
 object TaskSection {
@@ -36,6 +48,7 @@ object TaskSection {
     const val TODO = "TODO"
     const val DONT_FORGET = "DONT_FORGET"
     const val GRATEFUL = "GRATEFUL"
+    const val GOALS = "GOALS"
 }
 
 @Entity(
@@ -49,7 +62,7 @@ object TaskSection {
         ),
     ],
     indices = [
-        Index(value = ["date"], unique = true),
+        Index(value = ["type", "date"], unique = true),
         Index(value = ["folderId"]),
         Index(value = ["type"]),
     ],

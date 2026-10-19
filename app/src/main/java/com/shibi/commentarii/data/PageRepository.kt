@@ -2,9 +2,13 @@ package com.shibi.commentarii.data
 
 import androidx.room.withTransaction
 import java.time.Clock
+import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.temporal.IsoFields
+import java.util.Locale
 import kotlinx.coroutines.flow.Flow
 
 class PageRepository(
@@ -65,6 +69,48 @@ class PageRepository(
     }
 
     suspend fun getLatestDailyBefore(date: LocalDate): PageEntity? = dao.getLatestDailyBefore(date)
+
+    /** The WEEKLY page keyed by its [monday]; created (seeded with [SectionKind.WEEKLY_KINDS]) on first call. */
+    suspend fun getOrCreateWeekly(monday: LocalDate): PageEntity {
+        require(monday.dayOfWeek == DayOfWeek.MONDAY) { "A weekly page is keyed by its Monday" }
+        return getOrCreatePeriod(PageType.WEEKLY, monday, weekTitle(monday), SectionKind.WEEKLY_KINDS)
+    }
+
+    /** The MONTHLY page keyed by the [firstOfMonth]; created (seeded with [SectionKind.MONTHLY_KINDS]) on first call. */
+    suspend fun getOrCreateMonthly(firstOfMonth: LocalDate): PageEntity {
+        require(firstOfMonth.dayOfMonth == 1) { "A monthly page is keyed by the 1st of the month" }
+        return getOrCreatePeriod(PageType.MONTHLY, firstOfMonth, monthTitle(firstOfMonth), SectionKind.MONTHLY_KINDS)
+    }
+
+    /** Emits the weekly page for [monday], or null while it does not exist. Never creates it. */
+    fun observeWeekly(monday: LocalDate): Flow<PageEntity?> = dao.observePage(PageType.WEEKLY, monday)
+
+    /** Emits the monthly page for [firstOfMonth], or null while it does not exist. Never creates it. */
+    fun observeMonthly(firstOfMonth: LocalDate): Flow<PageEntity?> = dao.observePage(PageType.MONTHLY, firstOfMonth)
+
+    private suspend fun getOrCreatePeriod(
+        type: String,
+        date: LocalDate,
+        title: String,
+        kinds: List<String>,
+    ): PageEntity = db.withTransaction {
+        dao.getPage(type, date) ?: run {
+            val t = now()
+            val id = dao.insertPage(PageEntity(type = type, title = title, date = date, createdAt = t, updatedAt = t))
+            dao.insertBlocks(
+                kinds.mapIndexed { i, kind ->
+                    SectionBlockEntity(
+                        pageId = id,
+                        kind = kind,
+                        position = i,
+                        payloadJson = if (kind in SectionKind.DOCUMENT_KINDS) BlockDocument.EMPTY.toJson() else "{}",
+                    )
+                },
+            )
+            rebuildFts(id)
+            checkNotNull(dao.getPage(id))
+        }
+    }
 
     suspend fun createNote(title: String): PageEntity = db.withTransaction {
         val t = now()
@@ -177,6 +223,22 @@ class PageRepository(
         rebuildFts(pageId)
     }
 
+    suspend fun getEvents(pageId: Long): EventList =
+        EventList.fromJson(dao.getBlocks(pageId).firstOrNull { it.kind == SectionKind.EVENTS }?.payloadJson)
+
+    /** Saves the EVENTS list of a monthly page, sorted by date. */
+    suspend fun saveEvents(pageId: Long, events: EventList) = db.withTransaction {
+        dao.updateBlockPayload(pageId, SectionKind.EVENTS, events.sorted().toJson())
+        dao.touch(pageId, now())
+        rebuildFts(pageId)
+    }
+
+    fun observeMoods(from: LocalDate, to: LocalDate): Flow<List<MoodEntity>> = dao.observeMoods(from, to)
+
+    fun observeDailyTasks(from: LocalDate, to: LocalDate): Flow<List<DailyTaskRow>> = dao.observeDailyTasks(from, to)
+
+    fun observeContentDates(from: LocalDate, to: LocalDate): Flow<List<LocalDate>> = dao.observeContentDates(from, to)
+
     // ---- Folders ----
 
     fun observeFolders(): Flow<List<FolderEntity>> = dao.observeFolders()
@@ -232,9 +294,12 @@ class PageRepository(
         val parts = mutableListOf<String>()
         dao.getTasks(pageId).forEach { parts += it.text }
         dao.getSchedule(pageId).forEach { parts += it.text }
-        dao.getBlocks(pageId)
-            .filter { it.kind == SectionKind.NOTES || it.kind == SectionKind.RICH_TEXT }
-            .forEach { parts += BlockDocument.fromJson(it.payloadJson).flattenText() }
+        dao.getBlocks(pageId).forEach {
+            when (it.kind) {
+                in SectionKind.DOCUMENT_KINDS -> parts += BlockDocument.fromJson(it.payloadJson).flattenText()
+                SectionKind.EVENTS -> parts += EventList.fromJson(it.payloadJson).flattenText()
+            }
+        }
         val body = parts.filter { it.isNotBlank() }.joinToString("\n")
         dao.deleteFts(pageId)
         dao.insertFts(PageSearchFts(pageId, page.title, body))
@@ -249,6 +314,17 @@ class PageRepository(
     companion object {
         const val FIRST_HOUR = 6
         const val LAST_HOUR = 22
+
+        private val WeekDayFormat = DateTimeFormatter.ofPattern("MMM d", Locale.ENGLISH)
+        private val MonthFormat = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.ENGLISH)
+
+        /** Fixed English title stored for search, e.g. "Week of Oct 12 – Oct 18 (W42)". */
+        fun weekTitle(monday: LocalDate): String =
+            "Week of ${monday.format(WeekDayFormat)} – ${monday.plusDays(6).format(WeekDayFormat)} " +
+                "(W${monday.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR)})"
+
+        /** Fixed English title stored for search, e.g. "October 2026". */
+        fun monthTitle(firstOfMonth: LocalDate): String = firstOfMonth.format(MonthFormat)
 
         /** Terms of letters/digits only (no FTS operators or quotes), each as a prefix term, ANDed. */
         fun toFtsMatch(query: String): String? {

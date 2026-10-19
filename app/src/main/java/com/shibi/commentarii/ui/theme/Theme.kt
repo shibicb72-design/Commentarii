@@ -22,6 +22,9 @@ class CommentariiColors(
     val onSage: Color,
     val card: Color,
     val onCard: Color,
+    /** Day-square tints for moods 1 (very sad) to 5 (very happy); [onMood] is the colour of the number drawn on each. */
+    val mood: List<Color>,
+    val onMood: List<Color>,
 )
 
 private val LightExtras = CommentariiColors(
@@ -31,6 +34,8 @@ private val LightExtras = CommentariiColors(
     onSage = Color(0xFF2B2220),
     card = Color(0xFFFFFDFB),
     onCard = Color(0xFF2B2220),
+    mood = listOf(Color(0xFFE8A7A7), Color(0xFFF2CDB5), Color(0xFFE2DCEC), Color(0xFFDCE6C4), Color(0xFFBFDDBE)),
+    onMood = List(5) { Color(0xFF2B2220) },
 )
 
 private val DarkExtras = CommentariiColors(
@@ -40,6 +45,8 @@ private val DarkExtras = CommentariiColors(
     onSage = Color(0xFFF3ECE9),
     card = Color(0xFF2A2423),
     onCard = Color(0xFFF3ECE9),
+    mood = listOf(Color(0xFF8C3A3A), Color(0xFF7A5236), Color(0xFF4A4560), Color(0xFF5C6B3A), Color(0xFF3F6B47)),
+    onMood = List(5) { Color(0xFFFFF5F3) },
 )
 
 private val LightScheme: ColorScheme = lightColorScheme(

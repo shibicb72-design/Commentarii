@@ -8,6 +8,8 @@ import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Today
+import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.ViewWeek
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -39,17 +41,25 @@ import androidx.navigation.navArgument
 import com.shibi.commentarii.AppContainer
 import com.shibi.commentarii.R
 import com.shibi.commentarii.data.PageType
+import com.shibi.commentarii.domain.parseMonthRoute
+import com.shibi.commentarii.domain.parseWeekRoute
+import com.shibi.commentarii.domain.weekStart
 import com.shibi.commentarii.ui.daily.DailyPageScreen
 import com.shibi.commentarii.ui.lock.NavRestore
+import com.shibi.commentarii.ui.month.MonthPageScreen
 import com.shibi.commentarii.ui.notes.NoteEditorScreen
 import com.shibi.commentarii.ui.notes.NotesListScreen
 import com.shibi.commentarii.ui.search.SearchScreen
 import com.shibi.commentarii.ui.settings.DebugLogScreen
 import com.shibi.commentarii.ui.settings.SettingsScreen
+import com.shibi.commentarii.ui.week.WeekPageScreen
 import java.time.LocalDate
+import java.time.YearMonth
 
 object Routes {
     const val DAILY = "daily/{date}"
+    const val WEEK = "week/{mondayDate}"
+    const val MONTH = "month/{yearMonth}"
     const val NOTE = "note/{id}"
     const val NOTES = "notes"
     const val SEARCH = "search"
@@ -57,11 +67,15 @@ object Routes {
     const val DEBUG = "settings/debug"
 
     fun daily(date: LocalDate) = "daily/$date"
+    fun week(date: LocalDate) = "week/${weekStart(date)}"
+    fun month(month: YearMonth) = "month/$month"
     fun note(id: Long) = "note/$id"
 }
 
 private enum class Tab(val label: Int, val icon: ImageVector) {
     TODAY(R.string.tab_today, Icons.Filled.Today),
+    WEEK(R.string.tab_week, Icons.Outlined.ViewWeek),
+    MONTH(R.string.tab_month, Icons.Outlined.CalendarMonth),
     NOTES(R.string.tab_notes, Icons.Filled.EditNote),
     SEARCH(R.string.tab_search, Icons.Filled.Search),
     SETTINGS(R.string.tab_settings, Icons.Filled.Settings),
@@ -70,6 +84,8 @@ private enum class Tab(val label: Int, val icon: ImageVector) {
 private fun tabOf(route: String?): Tab? = when {
     route == null -> null
     route.startsWith("daily/") -> Tab.TODAY
+    route.startsWith("week/") -> Tab.WEEK
+    route.startsWith("month/") -> Tab.MONTH
     route.startsWith("note") -> Tab.NOTES
     route == Routes.SEARCH -> Tab.SEARCH
     route == Routes.SETTINGS || route == Routes.DEBUG -> Tab.SETTINGS
@@ -174,6 +190,36 @@ fun AppNav(
                                 }
                             },
                             windowWidthClass = widthClass,
+                            onOpenWeek = { d -> nav.navigate(Routes.week(d)) },
+                            onOpenMonth = { ym -> nav.navigate(Routes.month(ym)) },
+                        )
+                    }
+                    composable(
+                        Routes.WEEK,
+                        arguments = listOf(navArgument("mondayDate") { type = NavType.StringType }),
+                    ) { e ->
+                        WeekPageScreen(
+                            container = container,
+                            monday = parseWeekRoute(e.arguments?.getString("mondayDate"), today),
+                            onSelectWeek = { d ->
+                                nav.navigate(Routes.week(d)) { popUpTo(Routes.WEEK) { inclusive = true } }
+                            },
+                            onOpenDay = { d -> nav.navigate(Routes.daily(d)) },
+                            windowWidthClass = widthClass,
+                        )
+                    }
+                    composable(
+                        Routes.MONTH,
+                        arguments = listOf(navArgument("yearMonth") { type = NavType.StringType }),
+                    ) { e ->
+                        MonthPageScreen(
+                            container = container,
+                            month = parseMonthRoute(e.arguments?.getString("yearMonth"), today),
+                            onSelectMonth = { ym ->
+                                nav.navigate(Routes.month(ym)) { popUpTo(Routes.MONTH) { inclusive = true } }
+                            },
+                            onOpenDay = { d -> nav.navigate(Routes.daily(d)) },
+                            windowWidthClass = widthClass,
                         )
                     }
                     composable(
@@ -197,10 +243,11 @@ fun AppNav(
                         SearchScreen(
                             container = container,
                             onOpenPage = { type, id, date ->
-                                if (type == PageType.DAILY && date != null) {
-                                    nav.navigate(Routes.daily(date))
-                                } else {
-                                    nav.navigate(Routes.note(id))
+                                when {
+                                    type == PageType.DAILY && date != null -> nav.navigate(Routes.daily(date))
+                                    type == PageType.WEEKLY && date != null -> nav.navigate(Routes.week(date))
+                                    type == PageType.MONTHLY && date != null -> nav.navigate(Routes.month(YearMonth.from(date)))
+                                    else -> nav.navigate(Routes.note(id))
                                 }
                             },
                         )
@@ -220,6 +267,8 @@ private fun concreteRoute(entry: NavBackStackEntry, today: LocalDate): String? =
     Routes.DAILY -> Routes.daily(
         entry.arguments?.getString("date")?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: today,
     )
+    Routes.WEEK -> Routes.week(parseWeekRoute(entry.arguments?.getString("mondayDate"), today))
+    Routes.MONTH -> Routes.month(parseMonthRoute(entry.arguments?.getString("yearMonth"), today))
     Routes.NOTE -> entry.arguments?.getLong("id")?.let { Routes.note(it) }
     else -> route
 }
@@ -232,6 +281,8 @@ private fun navigateToTab(nav: NavHostController, tab: Tab, today: LocalDate) {
         }
         else -> nav.navigate(
             when (tab) {
+                Tab.WEEK -> Routes.week(today)
+                Tab.MONTH -> Routes.month(YearMonth.from(today))
                 Tab.NOTES -> Routes.NOTES
                 Tab.SEARCH -> Routes.SEARCH
                 else -> Routes.SETTINGS

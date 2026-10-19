@@ -3,7 +3,7 @@
 Single module `:app`, package `com.shibi.commentarii`. All data local (Room + DataStore); no network.
 
 ## Data model (Room, `data/Entities.kt`)
-- `pages` (id, type, title, date?, folderId?, pinned, createdAt, updatedAt, lastOpenedAt?). `date` is unique, so one DAILY page per day. `type` is `PageType` (DAILY, NOTE).
+- `pages` (id, type, title, date?, folderId?, pinned, createdAt, updatedAt, lastOpenedAt?). `(type, date)` is unique (index `index_pages_type_date`), so one page per type per date: a DAILY page, a WEEKLY page keyed by its Monday and a MONTHLY page keyed by the 1st can all share a date. `type` is `PageType` (DAILY, NOTE, WEEKLY, MONTHLY). Notes have a null date and may repeat.
 - `section_blocks` (pageId -> pages, CASCADE; kind, position, payloadJson): the ordered sections of a page.
 - `task_items` (pageId, section, position, text, done, carriedTo?): list-style sections (priorities, to-do, don't forget, grateful). `carriedTo` marks the original of a rolled-over task.
 - `schedule_entries` (pageId, date, minuteOfDay, text, isCustom): the day schedule (6:00-22:00 half-hour seed rows).
@@ -12,22 +12,39 @@ Single module `:app`, package `com.shibi.commentarii`. All data local (Room + Da
 - `page_search`: FTS4 (unicode61), rowid = page id.
 - Converters: LocalDate <-> epoch day, Instant <-> epoch millis.
 
+## Database versions
+- v1: initial schema, `index_pages_date` unique on `date`.
+- v2: `MIGRATION_1_2` drops `index_pages_date` and creates the unique `index_pages_type_date(type, date)`. No new table; `MigrationTest` checks that data survives and that WEEKLY and DAILY can share a date. Registered in `CommentariiDatabase.build` via `addMigrations`; schemas are exported to `app/schemas` (`1.json`, `2.json`); the test builds the v1 database from `1.json` itself (Robolectric does not see schema files as test assets, so `MigrationTestHelper` is not used).
+
 ## Section blocks and JSON payloads
 Every page has ordered `section_blocks` rows. Structured data (tasks, schedule, mood, self-care) lives in its own tables; free-form sections (NOTES, RICH_TEXT) store a `BlockDocument` (list of `DocBlock(type, text, ...)`) serialised in `payloadJson`. New free-form section kinds need no migration.
+- WEEKLY_KINDS: GOALS, TODO, DONT_FORGET, SELF_CARE (habit grid, read from the day-keyed checks), MOOD (row of the day-keyed moods), NOTES, REVIEW_WELL, REVIEW_IMPROVE.
+- MONTHLY_KINDS: GOALS, EVENTS, TODO, SELF_CARE (summary), NOTES, REVIEW.
+- Document kinds (NOTES, RICH_TEXT, REVIEW_WELL, REVIEW_IMPROVE, REVIEW) hold a `BlockDocument`. GOALS, TODO and DONT_FORGET are `task_items` rows of the period page (section GOALS/TODO/DONT_FORGET); the weekly page allows at most 3 goals (UI and view model), the monthly page any number.
+- EVENTS holds an `EventList(items = [EventItem(epochDay, text)])` in `data/EventList.kt`, kept sorted by date. Events have no reminders and no alarm code.
+- Weekly and monthly pages are created by `getOrCreateWeekly(monday)` / `getOrCreateMonthly(firstOfMonth)` (idempotent, seeded blocks, fixed English titles such as "Week of Oct 12 – Oct 18 (W42)" and "October 2026" for search; the screen formats titles from `strings.xml`). `observeWeekly` / `observeMonthly` never create a page; the daily "This week & month" card uses them.
+- Visiting a week or month page never creates DAILY pages; tapping a day opens `daily/{date}`.
+- Rollover looks at DAILY pages only (`getLatestDailyBefore`), so weekly and monthly tasks are never carried over.
 
 ## Search (FTS)
-No triggers. `PageRepository.rebuildFts(pageId)` rewrites the page row: title plus flattened text of tasks, schedule and document sections. It is called after each save that can change searchable text. `search()` turns user input into a prefix MATCH (`toFtsMatch`), sanitising operators, and returns pinned pages first. The FTS table is never exported; import rebuilds it.
+No triggers. `PageRepository.rebuildFts(pageId)` rewrites the page row: title plus flattened text of tasks, schedule, document sections (including the review kinds) and the EVENTS list. It is called after each save that can change searchable text. `search()` turns user input into a prefix MATCH (`toFtsMatch`), sanitising operators, and returns pinned pages first. The FTS table is never exported; import rebuilds it.
 
 ## Repositories and DI
 Manual DI through `AppContainer` (created in `CommentariiApp`). It owns the `CommentariiDatabase`, `SettingsRepository` (DataStore: lock, export reminder, last export, last opened date, reminder dismissal, dark mode), `PageRepository`, `SelfCareRepository` and `ExportImport`. DAOs: `PageDao` (pages, blocks, tasks, schedule, mood, FTS, folders, tags, backup bulk methods), `SelfCareDao`.
 
 ## Domain (pure functions, `domain/`)
-No Android dependencies, unit tested: `Rollover` (carry unfinished tasks to the next day), `Streaks` (self-care streak counting), `AlarmTimes` (exact-minute reminder times; past entries are skipped).
+No Android dependencies, unit tested: `Rollover` (carry unfinished tasks to the next day), `Streaks` (self-care streak counting), `Periods` (Monday-first weeks, ISO week, month grid padded to whole weeks, week/month route parsing that snaps or falls back to the current period), `Habits` (week grid and month summary), `AlarmTimes` (exact-minute reminder times; past entries are skipped).
+
+## Habit denominator rule (month summary)
+Per habit the month shows `done/denominator`: a past month uses its number of days, the current month the days elapsed including today, a future month shows "-". Checks outside the month (or after today) are not counted.
+
+## Calendar and day content
+The month calendar dots a day that has a mood, a non-blank task or schedule text, or a non-empty NOTES document (`PageDao.observeContentDates`), and tints it by mood with a theme container colour plus its on-colour. Week and month pages read daily data through read-only DAO queries (`observeDailyTasks`, `observeMoods`, `observeContentDates`) and toggle habits through `SelfCareRepository.toggleCheck`, so the daily page shows the same checks.
 
 ## Export / import (`backup/ExportImport.kt`)
 One JSON document, `formatVersion` = 1:
 `folders, tags, pages, sectionBlocks, tasks, schedule, moods, selfCareItems, selfCareChecks, pageTags, settings`.
-Dates are epoch days, instants epoch millis, ids preserved so relations survive. Settings include exportReminderEnabled, darkMode, lastOpenedDate, lastExportAt, reminderDismissedAt; `lockEnabled` is deliberately never exported or changed.
+Page types are plain strings and there is no type whitelist, so weekly and monthly pages round-trip unchanged and `formatVersion` stays 1 (v1 files import as before). Dates are epoch days, instants epoch millis, ids preserved so relations survive. Settings include exportReminderEnabled, darkMode, lastOpenedDate, lastExportAt, reminderDismissedAt; `lockEnabled` is deliberately never exported or changed.
 - `export()`: reads all tables in one transaction; deterministic ordering, so export -> import -> export is byte-identical.
 - `import(json)`: parses and validates fully first (bad JSON or formatVersion != 1 throws `BackupFormatException` with no data touched), then in a single transaction deletes everything, inserts with original ids, rebuilds FTS for every page, and applies settings afterwards.
 - Callers (UI, later) are responsible for setting `lastExportAt` after a successful export.

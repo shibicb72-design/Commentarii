@@ -24,6 +24,9 @@ data class SelfCareUi(val id: Long, val name: String, val checked: Boolean, val 
 
 data class ChipUi(val id: Long, val name: String)
 
+/** A goal of the current week or month, shown read-only on the daily page. */
+data class PeriodGoal(val text: String, val done: Boolean = false)
+
 /** Everything the daily page shows. Plain data so screenshot tests can build it without a database. */
 data class DailyUiState(
     val date: LocalDate,
@@ -41,6 +44,8 @@ data class DailyUiState(
     /** 1 (very sad) .. 5 (very happy), null when not chosen. */
     val mood: Int? = null,
     val notes: String = "",
+    val weekGoals: List<PeriodGoal> = emptyList(),
+    val monthGoals: List<PeriodGoal> = emptyList(),
 ) {
     internal fun tasksOf(section: String): List<TaskUi> = when (section) {
         TaskSection.PRIORITY -> priorities
@@ -87,4 +92,6 @@ data class DailyActions(
     val onRemoveSelfCare: (itemId: Long) -> Unit = {},
     val onMood: (Int) -> Unit = {},
     val onNotes: (String) -> Unit = {},
+    val onOpenWeek: () -> Unit = {},
+    val onOpenMonth: () -> Unit = {},
 )

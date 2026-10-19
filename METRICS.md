@@ -49,3 +49,22 @@ Usage (`claude -p /usage`): session 21% -> 24%, week 2% -> 2%.
 
 Usage after each step: start 24% / week 2%; plan 26% / 2%; impl 29% / 3%; review 30% / 3%; fix 31% / 3%. (+7 session points for the feature.)
 fix3 total: $3.75. Running total: $12.30.
+
+## v2 Week + Month (branch opus/v2-week-month): Opus plan -> Sonnet implement -> Opus review -> Sonnet fix
+
+| Step | Model | Input | Output | Cache read | Cache write | Cost USD |
+|---|---|---|---|---|---|---|
+| v2-plan | claude-opus-5-5 | 10 | 8030 | 270448 | 56022 | 0.663 |
+| v2-plan | claude-haiku-5-5 | 30 | 15249 | 504167 | 58894 | 0.020 |
+| v2-impl | claude-sonnet-5-5 | 122 | 108302 | 12498889 | 261195 | 3.378 |
+| v2-impl | claude-haiku-5-5 | 34 | 9532 | 171934 | 96530 | 0.019 |
+| v2-review | claude-opus-5-5 | 42 | 11091 | 2044836 | 116379 | 1.562 |
+| v2-review | claude-haiku-5-5 | 10 | 3416 | 46809 | 35608 | 0.007 |
+| v2-fix | claude-sonnet-5-5 | 44 | 15699 | 1009780 | 108895 | 0.599 |
+| v2-fix | claude-haiku-5-5 | 8 | 735 | 56293 | 10120 | 0.002 |
+
+Usage after each step: start 31% / week 3%; plan 32% / 3%; impl 41% / 4%; review 43% / 4%; fix 44% / 4%. (+13 session points: over the 10-point mark.)
+v2 total: $6.25. Running total: $18.55.
+
+Diagnosis of the spike: the Sonnet implement step was 99 turns in one context. It re-read 12.5M cache tokens (about $3.4, 9 of the 13 points). Output was 108k and cache writes 261k, so the cost came from re-reading a growing context on every turn, not from big files or logs (gradle output went through Haiku). Opus review: 2.0M cache reads over 26 turns (it read the full diff file by file).
+Fix for next time: split a large feature's IMPLEMENT into 2-3 sub-tickets (data/domain, UI, tests+screenshots), each a fresh `claude -p --model sonnet` run, so context resets between them. Give the review a `git diff --stat` plus a list of the plan's key files instead of the whole diff. Judgment: v2 (2 screens, 3 new page types, migration, 40 tests, 8 screenshots) justified a big run, but the context growth did not.
