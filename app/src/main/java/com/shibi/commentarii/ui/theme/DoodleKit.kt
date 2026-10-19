@@ -37,6 +37,7 @@ enum class DoodleId {
     SUN_FACE, CLOUD_FACE, CLOUD_PUFF, RAINBOW, RAINDROP, KITE, UMBRELLA,
     MOON_FACE, STAR_FACE, PLANET, SPARKLE_CLUSTER, HEART_FACE, BALLOON, BLOSSOM, BRANCH, PETAL, BUD, DAISY,
     LEAF_SPRIG, TEA_LEAF, TEACUP_FACE, WHISK, TEAPOT, DANGO, BAMBOO, LAVENDER, STEAM,
+    MOCHI, ONIGIRI,
 }
 
 /** Draws a 100x100-unit doodle centred on [center], [size] px wide, rotated by [rotation] degrees. */
@@ -105,6 +106,8 @@ fun DrawScope.drawDoodle(
             DoodleId.BAMBOO -> drawBamboo(ink, sticker)
             DoodleId.LAVENDER -> drawLavender(ink, sticker)
             DoodleId.STEAM -> drawSteam(ink, sticker, t)
+            DoodleId.MOCHI -> drawMochi(ink, sticker)
+            DoodleId.ONIGIRI -> drawOnigiri(ink, sticker)
         }
     }
 }

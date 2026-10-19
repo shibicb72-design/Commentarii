@@ -98,6 +98,10 @@ private object GD {
     val potHandle by lazy { path { m(19, 52); c(-1, 50, -1, 78, 21, 77) } }
     val potBase by lazy { path { rr(26, 84, 66, 91, 3) } }
 
+    val mochi by lazy { path { m(12, 78); c(8, 52, 24, 30, 50, 30); c(76, 30, 92, 52, 88, 78); c(86, 90, 14, 90, 12, 78); close() } }
+    val mochiLeaf by lazy { path { m(50, 32); c(44, 20, 56, 10, 66, 12); c(66, 24, 58, 32, 50, 32); close() } }
+    val onigiri by lazy { path { m(50, 10); c(60, 10, 90, 70, 86, 82); c(84, 90, 16, 90, 14, 82); c(10, 70, 40, 10, 50, 10); close() } }
+    val nori by lazy { path { m(30, 70); l(70, 70); c(72, 80, 74, 86, 72, 88); l(28, 88); c(26, 86, 28, 80, 30, 70); close() } }
     val stick by lazy { path { m(50, 3); l(50, 97) } }
     val ball1 by lazy { path { oval(50, 23, 18, 18) } }
     val ball2 by lazy { path { oval(50, 52, 18, 18) } }
@@ -261,6 +265,20 @@ internal fun DrawScope.drawDango(ink: DoodleInk, sticker: Boolean) {
     drawFace(50f, 54f, 20f, ink)
     lay(GD.ball1, ink, ink.fill)
     drawFace(50f, 25f, 20f, ink)
+}
+
+internal fun DrawScope.drawMochi(ink: DoodleInk, sticker: Boolean) {
+    diecut(ink, sticker, GD.mochi)
+    lay(GD.mochi, ink, Color.White)
+    lay(GD.mochiLeaf, ink, LeafGreen, highlight = false)
+    drawFace(50f, 60f, 28f, ink)
+}
+
+internal fun DrawScope.drawOnigiri(ink: DoodleInk, sticker: Boolean) {
+    diecut(ink, sticker, GD.onigiri)
+    lay(GD.onigiri, ink, Color.White)
+    lay(GD.nori, ink, lerp(ink.ink, Matcha, .25f), highlight = false)
+    drawFace(50f, 48f, 26f, ink)
 }
 
 internal fun DrawScope.drawBamboo(ink: DoodleInk, sticker: Boolean) {

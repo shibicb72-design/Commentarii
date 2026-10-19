@@ -55,7 +55,7 @@ private val heartStickers = listOf(
     DoodleId.HEART_FACE, DoodleId.BALLOON, DoodleId.ENVELOPE, DoodleId.BOW, DoodleId.SPARKLE_CLUSTER, DoodleId.BEAR_PEEK,
 )
 private val matchaStickers = listOf(
-    DoodleId.TEACUP_FACE, DoodleId.TEA_LEAF, DoodleId.WHISK, DoodleId.DANGO, DoodleId.TEAPOT, DoodleId.BAMBOO,
+    DoodleId.TEACUP_FACE, DoodleId.MOCHI, DoodleId.ONIGIRI, DoodleId.DANGO, DoodleId.TEAPOT, DoodleId.TEA_LEAF,
 )
 private val moonStickers = listOf(
     DoodleId.MOON_FACE, DoodleId.STAR_FACE, DoodleId.PLANET, DoodleId.LAVENDER, DoodleId.CANDLE_JAR, DoodleId.CLOUD_FACE,

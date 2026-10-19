@@ -163,7 +163,7 @@ private val arts: Map<String, ThemeArt> by lazy {
         ),
         "matcha_tea" to art(
             ArtFonts.Sniglet, TitleColoring.PER_WORD, Glyph.LEAF, LabelStyle.STAMP, Glyph.LEAF,
-            listOf(Glyph.LEAF), Glyph.CIRCLE, Paper.LINED, true,
+            listOf(Glyph.LEAF), Glyph.LEAF, Paper.LINED, true,
             listOf(0xD4E4B8, 0xEDE3C8, 0xC9DCC9, 0xF2D6C9, 0xE8E0F0), 0x26301F,
             listOf(0x4F6B2E, 0x8A5A3A), null, 0xDDE3CC, 0x1B2017,
         ),
