@@ -12,10 +12,13 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.unit.dp
@@ -35,6 +38,10 @@ class CardDecor(
     val shadowInk: Color,
     val tilt: Float = 8f,
     val stickerScale: Float = 1f,
+    val doodle2: DoodleId = doodle,
+    val paper: Paper = Paper.NONE,
+    val paperColor: Color = Color.Transparent,
+    val paperSeed: Int = 0,
 )
 
 private val plannerStickers = listOf(
@@ -103,6 +110,11 @@ fun cardDecor(themeId: String, art: ThemeArt, colors: ArtColors, title: String):
         shadowInk = colors.ink,
         tilt = if (idx % 2 == 0) 8f else -8f,
         stickerScale = if (themeId == "lavender_moon") 1.6f else 1f,
+        doodle2 = stickers.getOrElse((idx + 3) % stickers.size.coerceAtLeast(1)) { DoodleId.BLOSSOM },
+        // LINED would draw its rules at >= 0.45 alpha, so tall cards fall back to a dot grid there
+        paper = if (art.paper == Paper.LINED) Paper.DOT_GRID else art.paper,
+        paperColor = colors.paper,
+        paperSeed = themeId.hashCode(),
     )
 }
 
@@ -122,12 +134,29 @@ fun Modifier.themedCard(decor: CardDecor, shape: Shape): Modifier = drawWithCach
     val sh2 = decor.shadowInk.copy(alpha = 0.035f)
     val sh3 = decor.shadowInk.copy(alpha = 0.02f)
     val tapeColor = decor.accent.copy(alpha = 0.9f)
+    // Cards taller than ~600dp (Schedule) get a faint paper texture and a second edge sticker.
+    val tall = size.height > 600.dp.toPx() && decor.paper != Paper.NONE
+    val texture = if (tall) PaperCache(size, this, decor.paper, decor.paperSeed) else null
+    val clip = if (tall) Path().apply {
+        when (outline) {
+            is Outline.Rectangle -> addRect(outline.rect)
+            is Outline.Rounded -> addRoundRect(outline.roundRect)
+            is Outline.Generic -> addPath(outline.path)
+        }
+    } else null
+    val sticker2At = Offset(size.width - 20.dp.toPx() * decor.stickerScale, size.height * 0.5f)
     onDrawWithContent {
         translate(0f, 3 * s1) { drawOutline(outline, sh3) }
         translate(0f, 2 * s1) { drawOutline(outline, sh2) }
         translate(0f, s1) { drawOutline(outline, sh1) }
         drawContent()
+        if (texture != null && clip != null) {
+            clipPath(clip) { drawPaper(texture, decor.paperColor, 0.06f) }
+        }
         drawDoodle(decor.doodle, stickerAt, stickerSize, decor.ink, rotation = decor.tilt, sticker = decor.sticker)
+        if (tall) {
+            drawDoodle(decor.doodle2, sticker2At, stickerSize, decor.ink, rotation = -decor.tilt, sticker = decor.sticker)
+        }
         if (decor.tape) {
             drawWashiTape(tapeAt, tapeLen, tapeThick, -32f, tapeColor, decor.tapePattern, decor.shadowInk)
         }

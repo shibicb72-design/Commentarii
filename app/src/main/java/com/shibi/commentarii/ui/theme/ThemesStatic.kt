@@ -143,9 +143,9 @@ private val WashiDeco = ThemeDecoration { size, density, dark ->
             confetti(37, 6, 5, listOf(Glyph.SPARKLE), listOf(Gold, acc[4], acc[0]).map { deep(it) }, 10f..18f)
             doodleConfetti(41, 4, 3, listOf(DoodleId.DAISY), { ink(Color.White, Gold) }, 22f..32f)
             put(DoodleId.SPEECH_HEART, 0.92f, 0.31f, 0.12f, 8f, ink(acc[1], Coral, 0.9f), maxDp = 72f)
-            // bottom anchors in the gutters, clear of the card column: plant (left), bear over sticky note (right)
-            put(DoodleId.PLANT_POT, 0.07f, 0.935f, 0.27f, -3f, ink(acc[0], LeafGreen), maxDp = 72f)
-            put(DoodleId.STICKY_NOTE, 0.92f, 0.955f, 0.27f, 5f, ink(acc[3], acc[0]), maxDp = 72f)
+            // scene motifs live in the side gutters over the content height; only the bear stays near the footer
+            put(DoodleId.PLANT_POT, 0.07f, 0.52f, 0.27f, -3f, ink(acc[0], LeafGreen), maxDp = 72f)
+            put(DoodleId.STICKY_NOTE, 0.92f, 0.64f, 0.27f, 5f, ink(acc[3], acc[0]), maxDp = 72f)
             put(DoodleId.BEAR_PEEK, 0.92f, 0.92f, 0.25f, 0f, ink(BearTan, acc[0]), maxDp = 72f)
         }
     }
@@ -176,10 +176,10 @@ private val SunnyDeco = ThemeDecoration { size, density, dark ->
             confetti(17, 3, 3, listOf(Glyph.STAR), pop.reversed(), 12f..20f)
             confetti(29, 3, 2, listOf(Glyph.FLOWER), pop, 14f..22f)
             confetti(43, 8, 4, listOf(Glyph.SPARKLE), listOf(Gold, acc[4], acc[0]).map { deep(it) }, 9f..16f)
-            // cozy bottom row
+            // cozy props in the gutters; candle + plant are the two footer heroes
             put(DoodleId.CANDLE_JAR, 0.12f, 0.935f, 0.22f, -3f, ink(acc[0], Gold))
-            put(DoodleId.CAMERA, 0.31f, 0.955f, 0.20f, 4f, ink(acc[3], acc[4]))
-            put(DoodleId.MUG_HEART, 0.50f, 0.945f, 0.19f, -5f, ink(acc[5], acc[1]))
+            put(DoodleId.CAMERA, 0.93f, 0.52f, 0.20f, 4f, ink(acc[3], acc[4]))
+            put(DoodleId.MUG_HEART, 0.065f, 0.82f, 0.19f, -5f, ink(acc[5], acc[1]))
             put(DoodleId.PLANT_POT, 0.87f, 0.925f, 0.25f, 3f, ink(acc[0], LeafGreen))
         }
     }
@@ -203,10 +203,10 @@ private val MatchaDeco = ThemeDecoration { size, density, dark ->
             put(DoodleId.DANGO, 0.05f, 0.40f, 0.15f, -14f, ink(acc[3], acc[0]))
             confetti(61, 4, 2, listOf(Glyph.LEAF, Glyph.CIRCLE), greens, 10f..16f)
             confetti(73, 4, 2, listOf(Glyph.SPARKLE), listOf(acc[3], acc[1]).map { deep(it) }, 9f..15f)
-            // tea set: teapot bottom-left, teacup + whisk bottom-right with steam
+            // tea set: teapot + whisk are the footer heroes; the steaming teacup sits in the right gutter
             put(DoodleId.TEAPOT, 0.15f, 0.93f, 0.26f, -4f, ink(acc[2], acc[0]))
-            put(DoodleId.TEACUP_FACE, 0.76f, 0.945f, 0.23f, 3f, ink(Color.White, acc[0]))
-            put(DoodleId.STEAM, 0.76f, 0.885f, 0.12f, 0f, ink(Color.White, acc[2], 0.8f), sticker = false, t = 0.5f)
+            put(DoodleId.TEACUP_FACE, 0.925f, 0.47f, 0.23f, 3f, ink(Color.White, acc[0]), maxDp = 72f)
+            put(DoodleId.STEAM, 0.925f, 0.415f, 0.12f, 0f, ink(Color.White, acc[2], 0.8f), sticker = false, t = 0.5f)
             put(DoodleId.WHISK, 0.92f, 0.93f, 0.20f, 12f, ink(acc[1], acc[3]))
         }
     }
@@ -297,7 +297,7 @@ private val LavenderDeco = ThemeDecoration { size, density, dark ->
             put(DoodleId.CLOUD_PUFF, 0.88f, 0.34f, 0.15f, 0f, ink(Color.White, acc[1], 0.7f), sticker = false)
             put(DoodleId.PLANET, 0.86f, 0.90f, 0.20f, 12f, ink(acc[2], acc[1]))
             put(DoodleId.LAVENDER, 0.09f, 0.93f, 0.24f, -6f, ink(acc[0], LeafGreen), sticker = false)
-            put(DoodleId.LAVENDER, 0.22f, 0.955f, 0.20f, 8f, ink(acc[1], LeafGreen), sticker = false)
+            put(DoodleId.LAVENDER, 0.06f, 0.58f, 0.20f, 8f, ink(acc[1], LeafGreen), sticker = false)
         }
     }
 }

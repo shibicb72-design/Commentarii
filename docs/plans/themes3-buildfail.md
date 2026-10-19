@@ -1,7 +1,14 @@
-# themes3 build failure (log: C:\Users\shibi\cc_commentarii\themes3-gradle-matcha.log)
+# Build failure: themes3 (from themes3-gradle-shared.log)
 
-Build: `:app:testDebugUnitTest` FAILED in 51s. 192 tests completed, 1 failed. No `e:` compile errors.
+Source: `C:\Users\shibi\cc_commentarii\themes3-gradle-shared.log`
+Task: `:app:compileDebugKotlin` FAILED (log line 42). Build ended `BUILD FAILED in 2s` (line 60).
 
-- `app/src/test/java/com/shibi/commentarii/ui/theme/ThemeCardTest.kt:19` — `ThemeCardTest > dailyTitlesGetDistinctStickersPerTheme` — `java.lang.AssertionError`. Assertion `assertEquals("$id: $doodles", 6, doodles.toSet().size)`: the six daily titles do not get six distinct doodles for one theme. The log does not show the failing theme id or the doodle list; the message is only in the test report at `app/build/reports/tests/testDebugUnitTest/index.html`.
+## Errors
 
-Likely cause to check: `cardDecor(...)` doodle selection in `app/src/main/java/com/shibi/commentarii/ui/theme/ThemeCard.kt` (or `DoodleKit.kt`) returns repeats for a theme whose `cornerDoodles(id)` pool is smaller than 6 (`lavender_moon` and `matcha_tea` were the most recent additions, so check those first).
+- `app/src/main/java/com/shibi/commentarii/ui/theme/ThemeCard.kt:139:41`: `Unresolved reference 'addOutline'.`
+
+## Notes
+
+- Only one Kotlin compile error (`e: ` lines); no test or other task failures in the log.
+- "What went wrong" block (log line 49) is the standard Gradle task-failure wrapper for the same error.
+- Not verified against source; the line number is taken from the compiler output.
