@@ -1,6 +1,14 @@
 package com.shibi.commentarii.ui.settings
 
+import android.content.Context
+import android.content.ContextWrapper
+import android.content.Intent
 import android.net.Uri
+import android.os.Build
+import android.provider.Settings
+import androidx.lifecycle.compose.LifecycleResumeEffect
+import androidx.fragment.app.FragmentActivity
+import com.shibi.commentarii.ui.lock.BiometricAuth
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -78,7 +86,33 @@ fun SettingsScreen(container: AppContainer, modifier: Modifier = Modifier) {
         vm.buildCallbacks(
             onExport = { exportLauncher.launch(vm.suggestedFileName()) },
             onImport = { importLauncher.launch(arrayOf("*/*")) },
+        ).copy(
+            onLockChange = { enable ->
+                val activity = context.findFragmentActivity()
+                if (!enable || activity == null) {
+                    vm.setLockEnabled(false)
+                } else if (!BiometricAuth.isAvailable(activity)) {
+                    vm.lockUnavailable()
+                } else {
+                    // Turning the lock on requires a successful authentication first.
+                    BiometricAuth.authenticate(activity, onSuccess = {
+                        container.lock.unlock()
+                        vm.setLockEnabled(true)
+                    })
+                }
+            },
+            onRequestExactAlarm = {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    context.startActivity(
+                        Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, Uri.parse("package:${context.packageName}")),
+                    )
+                }
+            },
         )
+    }
+    LifecycleResumeEffect(vm) {
+        vm.refreshExactAlarm()
+        onPauseOrDispose { }
     }
 
     val messageText = state.message?.let { stringResource(messageRes(it)) }
@@ -111,6 +145,16 @@ private fun messageRes(m: SettingsMessage): Int = when (m) {
     SettingsMessage.IMPORT_OK -> R.string.settings_msg_import_ok
     SettingsMessage.IMPORT_BAD_FORMAT -> R.string.settings_msg_import_bad_format
     SettingsMessage.IMPORT_FAILED -> R.string.settings_msg_import_failed
+    SettingsMessage.LOCK_UNAVAILABLE -> R.string.settings_msg_lock_unavailable
+}
+
+private fun Context.findFragmentActivity(): FragmentActivity? {
+    var c: Context? = this
+    while (c is ContextWrapper) {
+        if (c is FragmentActivity) return c
+        c = c.baseContext
+    }
+    return null
 }
 
 /** Stateless settings page; safe to render with fake state. */
@@ -135,6 +179,18 @@ fun SettingsContent(state: SettingsUiState, callbacks: SettingsCallbacks, modifi
                     state.lockEnabled,
                     callbacks.onLockChange,
                 )
+            }
+            if (!state.exactAlarmGranted) {
+                SectionCard(stringResource(R.string.settings_exact_alarm_title)) {
+                    Text(
+                        stringResource(R.string.settings_exact_alarm_explainer),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    OutlinedButton(
+                        onClick = callbacks.onRequestExactAlarm,
+                        modifier = Modifier.padding(vertical = 8.dp),
+                    ) { Text(stringResource(R.string.settings_exact_alarm_button)) }
+                }
             }
             SectionCard(stringResource(R.string.settings_section_backup)) {
                 SwitchRow(

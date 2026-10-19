@@ -338,6 +338,7 @@ class DailyViewModel(
                 )
             },
         )
+        if (saved.any { it.text.isNotBlank() }) container.onTimedEntryHasText()
         val idByKey = snapshot.zip(saved) { ui, row -> ui.key to row.id }.toMap()
         _state.update { st ->
             st.copy(

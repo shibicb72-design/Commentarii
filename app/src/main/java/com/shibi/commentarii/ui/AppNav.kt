@@ -19,6 +19,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -74,6 +75,8 @@ private fun tabOf(route: String?): Tab? = when {
 fun AppNav(
     container: AppContainer,
     widthClass: WindowWidthSizeClass,
+    openDate: LocalDate? = null,
+    onOpenDateHandled: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val nav = rememberNavController()
@@ -82,6 +85,13 @@ fun AppNav(
     val current = tabOf(entry?.destination?.route)
     val compact = widthClass == WindowWidthSizeClass.Compact
     val onTab: (Tab) -> Unit = { navigateToTab(nav, it, today) }
+
+    LaunchedEffect(openDate) {
+        openDate?.let { d ->
+            nav.navigate(Routes.daily(d)) { popUpTo(Routes.DAILY) { inclusive = true } }
+            onOpenDateHandled()
+        }
+    }
 
     Surface(
         modifier = modifier.fillMaxSize(),

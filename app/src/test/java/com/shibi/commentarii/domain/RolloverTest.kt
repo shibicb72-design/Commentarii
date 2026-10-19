@@ -56,6 +56,13 @@ class RolloverTest {
         assertNull(computeRollover(today, yesterday, today, items))
     }
 
+    @Test
+    fun skipsItemsAlreadyCarried() {
+        val carried = item(5, TaskSection.TODO).copy(carriedTo = today)
+        assertNull(computeRollover(today, yesterday, yesterday, listOf(carried)))
+        assertEquals(listOf(items[0]), computeRollover(today, yesterday, yesterday, listOf(items[0], carried))!!.items)
+    }
+
     // ---- applyRollover (Room) ----
 
     private lateinit var db: CommentariiDatabase

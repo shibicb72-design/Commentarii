@@ -22,7 +22,7 @@ fun computeRollover(
     if (lastOpenedDate != null && !lastOpenedDate.isBefore(today)) return null
     if (lastDailyDate == null || !lastDailyDate.isBefore(today)) return null
     val items = unfinishedItems.filter {
-        !it.done && it.text.isNotBlank() && (it.section == TaskSection.PRIORITY || it.section == TaskSection.TODO)
+        !it.done && it.carriedTo == null && it.text.isNotBlank() && (it.section == TaskSection.PRIORITY || it.section == TaskSection.TODO)
     }
     if (items.isEmpty()) return null
     return RolloverOffer(lastDailyDate, items)

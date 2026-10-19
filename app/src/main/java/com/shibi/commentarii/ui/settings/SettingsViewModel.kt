@@ -26,6 +26,7 @@ class SettingsViewModel(
     private val settings = container.settings
     private val selfCare = container.selfCare
     private val message = MutableStateFlow<SettingsMessage?>(null)
+    private val exactGranted = MutableStateFlow(container.alarms.canScheduleExact())
 
     private val base = combine(
         settings.lockEnabled,
@@ -44,18 +45,30 @@ class SettingsViewModel(
         )
     }
 
-    val state: StateFlow<SettingsUiState> = combine(base, message) { s, m -> s.copy(message = m) }
+    val state: StateFlow<SettingsUiState> = combine(base, message, exactGranted) { s, m, e ->
+        s.copy(message = m, exactAlarmGranted = e)
+    }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SettingsUiState(licenseText = licenseText))
 
     fun suggestedFileName(): String = backupFileName(LocalDate.now(container.clock))
+
+    fun refreshExactAlarm() {
+        exactGranted.value = container.alarms.canScheduleExact()
+    }
+
+    fun lockUnavailable() {
+        message.value = SettingsMessage.LOCK_UNAVAILABLE
+    }
+
+    fun setLockEnabled(value: Boolean) {
+        viewModelScope.launch { settings.setLockEnabled(value) }
+    }
 
     fun messageShown() {
         message.value = null
     }
 
     fun buildCallbacks(onExport: () -> Unit, onImport: () -> Unit) = SettingsCallbacks(
-        // Phase C: BiometricPrompt gating (auth before enabling, lock on start/resume) hooks in here. For now this
-        // only persists the preference.
         onLockChange = { v -> viewModelScope.launch { settings.setLockEnabled(v) } },
         onReminderChange = { v -> viewModelScope.launch { settings.setExportReminderEnabled(v) } },
         onExport = onExport,
@@ -96,7 +109,11 @@ class SettingsViewModel(
                     val input = resolver.openInputStream(uri) ?: error("Cannot open input")
                     input.use { String(it.readBytes(), Charsets.UTF_8) }
                 }
+                // Import replaces all rows (new ids), so drop the old alarms first and register the new ones after.
+                val from = LocalDate.now(container.clock).minusDays(1)
+                container.alarms.cancel(container.pages.getUpcomingSchedule(from).map { it.id })
                 container.exportImport.import(json)
+                container.rescheduleAllAlarms()
                 SettingsMessage.IMPORT_OK
             } catch (e: CancellationException) {
                 throw e

@@ -22,6 +22,7 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         val lastOpenedDate = longPreferencesKey("last_opened_date")
         val reminderDismissedAt = longPreferencesKey("reminder_dismissed_at")
         val darkMode = stringPreferencesKey("dark_mode")
+        val notificationsAsked = booleanPreferencesKey("notifications_asked")
     }
 
     val lockEnabled: Flow<Boolean> = store.data.map { it[Keys.lockEnabled] ?: false }
@@ -32,6 +33,13 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         store.data.map { p -> p[Keys.reminderDismissedAt]?.let { Instant.ofEpochMilli(it) } }
     val darkMode: Flow<DarkMode> = store.data.map { p ->
         p[Keys.darkMode]?.let { runCatching { DarkMode.valueOf(it) }.getOrNull() } ?: DarkMode.SYSTEM
+    }
+
+    /** True once the POST_NOTIFICATIONS prompt has been shown (it is only requested once, lazily). */
+    val notificationsAsked: Flow<Boolean> = store.data.map { it[Keys.notificationsAsked] ?: false }
+
+    suspend fun setNotificationsAsked(value: Boolean) {
+        store.edit { it[Keys.notificationsAsked] = value }
     }
 
     suspend fun setLockEnabled(value: Boolean) {

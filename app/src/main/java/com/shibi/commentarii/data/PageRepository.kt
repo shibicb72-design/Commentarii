@@ -11,6 +11,7 @@ class PageRepository(
     private val db: CommentariiDatabase,
     private val clock: Clock,
     val zone: ZoneId,
+    private val scheduleListener: ScheduleListener? = null,
 ) {
     private val dao = db.pageDao()
 
@@ -78,9 +79,14 @@ class PageRepository(
         rebuildFts(pageId)
     }
 
-    suspend fun deletePage(pageId: Long) = db.withTransaction {
-        dao.deleteFts(pageId)
-        dao.deletePage(pageId)
+    suspend fun deletePage(pageId: Long) {
+        val ids = db.withTransaction {
+            val scheduleIds = dao.getSchedule(pageId).map { it.id }
+            dao.deleteFts(pageId)
+            dao.deletePage(pageId)
+            scheduleIds
+        }
+        if (ids.isNotEmpty()) scheduleListener?.onScheduleChanged(ids, emptyList())
     }
 
     suspend fun setPinned(pageId: Long, pinned: Boolean) = dao.setPinned(pageId, pinned)
@@ -117,17 +123,26 @@ class PageRepository(
     fun observeSchedule(pageId: Long): Flow<List<ScheduleEntryEntity>> = dao.observeSchedule(pageId)
 
     /** Entries with the page's date. Existing ids are kept (stable for alarms); missing ones are deleted. */
-    suspend fun saveSchedule(pageId: Long, entries: List<ScheduleEntryEntity>): List<ScheduleEntryEntity> =
-        db.withTransaction {
+    suspend fun saveSchedule(pageId: Long, entries: List<ScheduleEntryEntity>): List<ScheduleEntryEntity> {
+        var touched: Set<Long> = emptySet()
+        val result = db.withTransaction {
             val date = checkNotNull(dao.getPage(pageId)?.date) { "Schedule needs a dated page" }
+            val before = dao.getSchedule(pageId).map { it.id }
             val rows = entries.map { it.copy(pageId = pageId, date = date) }
             val ids = dao.upsertSchedule(rows)
             val saved = rows.mapIndexed { i, r -> r.copy(id = ids[i]) }
             dao.deleteScheduleNotIn(pageId, ids)
             dao.touch(pageId, now())
             rebuildFts(pageId)
+            touched = before.toSet() + ids
             saved
         }
+        scheduleListener?.onScheduleChanged(touched, result)
+        return result
+    }
+
+    /** Non-empty schedule entries dated [from] or later (for rescheduling alarms). */
+    suspend fun getUpcomingSchedule(from: LocalDate): List<ScheduleEntryEntity> = dao.getScheduleFrom(from)
 
     suspend fun getMood(date: LocalDate): MoodEntity? = dao.getMood(date)
 

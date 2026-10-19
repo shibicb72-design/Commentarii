@@ -153,4 +153,13 @@
     <string name="rollover_skip">Skip</string>
     <string name="rollover_pick_title">Choose items to carry over</string>
     <string name="rollover_move_selected">Move selected</string>
+    <string name="notif_channel_name">Schedule reminders</string>
+    <string name="notif_channel_desc">Reminders ten minutes before a schedule entry.</string>
+    <string name="notif_in_10_min">In 10 min: %1$s</string>
+    <string name="lock_prompt_title">Unlock Commentarii</string>
+    <string name="lock_prompt_subtitle">Use your fingerprint or device lock.</string>
+    <string name="settings_msg_lock_unavailable">Set up a fingerprint or screen lock on this device first.</string>
+    <string name="settings_exact_alarm_title">Exact reminder times</string>
+    <string name="settings_exact_alarm_explainer">Without this permission reminders may arrive a few minutes late. Allow exact alarms for on-time reminders.</string>
+    <string name="settings_exact_alarm_button">Allow exact alarms</string>
 </resources>
