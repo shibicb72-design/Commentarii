@@ -22,10 +22,10 @@ class AlarmSelectionTest {
             entry(2, 12 * 60, "lunch"),
             entry(3, 13 * 60, "   "),
             entry(0, 14 * 60, "unsaved"),
-            entry(4, 9 * 60 + 5, "too soon"), // within 10 min: immediate, sorted first
+            entry(4, 9 * 60 + 5, "too soon"), // five minutes ahead: scheduled at 9:05, sorted first
             entry(5, 1 * 60, "tomorrow", day.plusDays(1)),
         )
-        assertEquals(listOf(4L, 2L, 5L),selectAlarms(entries, now, zone).map { it.entryId })
+        assertEquals(listOf(4L, 2L, 5L), selectAlarms(entries, now, zone).map { it.entryId })
     }
 
     @Test
@@ -40,8 +40,8 @@ class AlarmSelectionTest {
     }
 
     @Test
-    fun triggersTenMinutesBefore() {
+    fun triggersAtEntryTime() {
         val a = selectAlarms(listOf(entry(2, 12 * 60, "lunch")), now, zone).single()
-        assertEquals(Instant.parse("2026-10-18T11:50:00Z"), a.triggerAt)
+        assertEquals(Instant.parse("2026-10-18T12:00:00Z"), a.triggerAt)
     }
 }

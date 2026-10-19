@@ -2,6 +2,7 @@
 
 package com.shibi.commentarii.ui.daily
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -25,6 +26,7 @@ import androidx.compose.material.icons.filled.SentimentVerySatisfied
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -46,6 +48,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.shibi.commentarii.R
+import com.shibi.commentarii.ui.components.FirstLineRow
+import com.shibi.commentarii.ui.components.checklistTextStyle
 import com.shibi.commentarii.ui.theme.AppColors
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -61,8 +65,10 @@ fun PrioritiesCard(items: List<TaskUi>, actions: TaskListActions, modifier: Modi
                 placeholder = stringResource(R.string.daily_priority_hint, i + 1),
                 strike = item.done,
                 leading = {
-                    Text("${i + 1}.", style = MaterialTheme.typography.titleMedium, modifier = Modifier.width(26.dp))
-                    CircleCheck(item.done, { actions.onToggleDone(i) })
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("${i + 1}.", style = MaterialTheme.typography.titleMedium, modifier = Modifier.width(26.dp))
+                        CircleCheck(item.done, { actions.onToggleDone(i) })
+                    }
                 },
             )
         }
@@ -109,7 +115,7 @@ fun DontForgetCard(items: List<TaskUi>, actions: TaskListActions, modifier: Modi
                 onValueChange = { actions.onText(i, it) },
                 placeholder = stringResource(R.string.daily_dont_forget_hint),
                 leading = {
-                    Text("•", style = MaterialTheme.typography.titleLarge, modifier = Modifier.width(24.dp).padding(start = 6.dp))
+                    Box(Modifier.size(6.dp).background(LocalContentColor.current, CircleShape))
                 },
                 trailing = {
                     SmallIconButton(Icons.Filled.Close, stringResource(R.string.daily_remove), { actions.onRemove(i) })
@@ -280,19 +286,22 @@ private fun SelfCareRow(
             },
         )
     } else {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            CircleCheck(item.checked, { onToggle(item.id) })
-            Text(
-                item.name,
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.weight(1f),
-            )
-            if (item.streak > 0) StreakBadge(item.streak)
-            SmallIconButton(Icons.Filled.Edit, stringResource(R.string.daily_rename), {
-                draft = item.name
-                editing = true
-            })
-            SmallIconButton(Icons.Filled.Delete, stringResource(R.string.daily_remove), { onRemove(item.id) })
+        val style = checklistTextStyle(MaterialTheme.typography.bodyLarge)
+        FirstLineRow(
+            style,
+            leading = { CircleCheck(item.checked, { onToggle(item.id) }) },
+            trailing = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (item.streak > 0) StreakBadge(item.streak)
+                    SmallIconButton(Icons.Filled.Edit, stringResource(R.string.daily_rename), {
+                        draft = item.name
+                        editing = true
+                    })
+                    SmallIconButton(Icons.Filled.Delete, stringResource(R.string.daily_remove), { onRemove(item.id) })
+                }
+            },
+        ) { pos ->
+            Text(item.name, style = style, modifier = Modifier.weight(1f).then(pos))
         }
     }
 }

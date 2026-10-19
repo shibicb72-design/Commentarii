@@ -16,6 +16,9 @@ import com.shibi.commentarii.MainActivity
 import com.shibi.commentarii.R
 import com.shibi.commentarii.debug.DebugLog
 import java.time.Clock
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 
 /** The app's shared debug log (the container's when available, else a file-backed instance on the same file). */
 internal fun Context.debugLog(): DebugLog =
@@ -29,6 +32,8 @@ object Notifications {
     const val EXTRA_DATE = "com.shibi.commentarii.extra.DATE"
     const val EXTRA_TEXT = "com.shibi.commentarii.extra.TEXT"
     const val EXTRA_ENTRY_ID = "com.shibi.commentarii.extra.ENTRY_ID"
+    const val EXTRA_MINUTE = "com.shibi.commentarii.extra.MINUTE"
+    private val TIME: DateTimeFormatter = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
 
     fun ensureChannel(context: Context) {
         val manager = context.getSystemService(NotificationManager::class.java)
@@ -41,8 +46,16 @@ object Notifications {
         manager.createNotificationChannel(channel)
     }
 
-    /** Posts "In 10 min: text"; logs and does nothing when notifications are not allowed. */
-    fun showReminder(context: Context, entryId: Long, date: String, text: String) {
+    /** Notification text: "Now (hh:mm): text", or "Now: text" when [minuteOfDay] is negative (test reminder). */
+    fun reminderText(context: Context, text: String, minuteOfDay: Int): String =
+        if (minuteOfDay < 0) {
+            context.getString(R.string.notif_now, text)
+        } else {
+            context.getString(R.string.notif_now_at, TIME.format(LocalTime.of(minuteOfDay / 60, minuteOfDay % 60)), text)
+        }
+
+    /** Posts "Now (hh:mm): text"; logs and does nothing when notifications are not allowed. */
+    fun showReminder(context: Context, entryId: Long, date: String, text: String, minuteOfDay: Int) {
         val log = context.debugLog()
         val manager = NotificationManagerCompat.from(context)
         ensureChannel(context)
@@ -70,7 +83,7 @@ object Notifications {
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(context.getString(R.string.app_name))
-            .setContentText(context.getString(R.string.notif_in_10_min, text))
+            .setContentText(reminderText(context, text, minuteOfDay))
             .setContentIntent(tap)
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_HIGH)

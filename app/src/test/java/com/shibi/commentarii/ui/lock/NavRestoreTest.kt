@@ -35,4 +35,11 @@ class NavRestoreTest {
     fun planPushesWhenFirstIsNotDaily() {
         assertEquals(listOf(RestoreStep("settings", false)), NavRestore.plan(listOf("settings")))
     }
+
+    @Test
+    fun debugRouteSurvivesRestore() {
+        val routes = listOf("daily/2026-10-18", "settings", "settings/debug")
+        assertEquals(routes, NavRestore.sanitize(routes))
+        assertEquals(routes, NavRestore.decode(NavRestore.encode(routes)))
+    }
 }

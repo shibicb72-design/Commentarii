@@ -41,8 +41,9 @@ class NotificationsTest {
         assertEquals(NotificationManager.IMPORTANCE_HIGH, channel.importance)
     }
 
-    private fun reminderIntent(id: Long, text: String) = Intent(AlarmScheduler.ACTION_REMINDER)
+    private fun reminderIntent(id: Long, text: String, minute: Int = -1) = Intent(AlarmScheduler.ACTION_REMINDER)
         .putExtra(Notifications.EXTRA_ENTRY_ID, id)
+        .putExtra(Notifications.EXTRA_MINUTE, minute)
         .putExtra(Notifications.EXTRA_DATE, "2026-10-18")
         .putExtra(Notifications.EXTRA_TEXT, text)
 
@@ -55,6 +56,17 @@ class NotificationsTest {
         assertTrue(log.contains("FIRE id=7 action=${AlarmScheduler.ACTION_REMINDER}"))
         assertTrue(log.contains("channelImportance=${NotificationManager.IMPORTANCE_HIGH}"))
         assertTrue(log.contains("enabled=true"))
+    }
+
+    @Test
+    fun reminderTextShowsEntryTimeOrJustNowForTest() {
+        val time = java.time.format.DateTimeFormatter.ofLocalizedTime(java.time.format.FormatStyle.SHORT)
+            .format(java.time.LocalTime.of(9, 30))
+        assertEquals("Now ($time): Dentist", Notifications.reminderText(context, "Dentist", 9 * 60 + 30))
+        assertEquals("Now: Test reminder", Notifications.reminderText(context, "Test reminder", -1))
+        AlarmReceiver().onReceive(context, reminderIntent(7, "Dentist", 9 * 60 + 30))
+        val text = shadowOf(manager).allNotifications.single().extras.getCharSequence("android.text").toString()
+        assertEquals("Now ($time): Dentist", text)
     }
 
     @Test

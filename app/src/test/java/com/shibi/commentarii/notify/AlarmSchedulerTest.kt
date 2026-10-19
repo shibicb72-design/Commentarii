@@ -48,7 +48,7 @@ class AlarmSchedulerTest {
         scheduler.rescheduleAll(entries)
         assertEquals(2, count())
         assertEquals(
-            Instant.parse("2026-10-18T11:50:00Z").toEpochMilli(),
+            Instant.parse("2026-10-18T12:00:00Z").toEpochMilli(),
             shadowOf(alarmManager).scheduledAlarms.minOf { it.triggerAtMs },
         )
     }

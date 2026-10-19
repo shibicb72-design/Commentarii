@@ -18,8 +18,7 @@ class ReminderStatusTest {
     }
 
     @Test
-    fun outcomeMessagesOnlyForImmediateAndPast() {
-        assertEquals(R.string.outcome_immediate, outcomeMessageRes(AlarmKind.IMMEDIATE))
+    fun outcomeMessagesOnlyForPast() {
         assertEquals(R.string.outcome_past, outcomeMessageRes(AlarmKind.PAST))
         assertNull(outcomeMessageRes(AlarmKind.SCHEDULED))
         assertNull(outcomeMessageRes(AlarmKind.BLANK))

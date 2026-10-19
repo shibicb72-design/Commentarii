@@ -1,5 +1,6 @@
 package com.shibi.commentarii.ui.lock
 
+import com.shibi.commentarii.ui.Routes
 import java.time.LocalDate
 
 /**
@@ -23,7 +24,7 @@ object NavRestore {
     fun decode(saved: String): List<String> = sanitize(saved.split(SEP))
 
     private fun isValid(route: String): Boolean = when {
-        route == "notes" || route == "search" || route == "settings" -> true
+        route == Routes.NOTES || route == Routes.SEARCH || route == Routes.SETTINGS || route == Routes.DEBUG -> true
         route.startsWith("daily/") -> runCatching { LocalDate.parse(route.removePrefix("daily/")) }.isSuccess
         route.startsWith("note/") -> route.removePrefix("note/").toLongOrNull() != null
         else -> false

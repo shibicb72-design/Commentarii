@@ -75,7 +75,7 @@ class ScheduleFlowTest {
         val id = saved.single().id
         assertTrue(id > 0)
         assertEquals("commentarii://alarm/$id", uriOf(alarms().single()))
-        assertEquals(ms("2026-10-18T14:50:00Z"), alarms().single().triggerAtMs)
+        assertEquals(ms("2026-10-18T15:00:00Z"), alarms().single().triggerAtMs)
 
         repo.saveSchedule(pageId, listOf(entry(id, 15 * 60, "call mum")))
         assertEquals(1, alarms().size)
@@ -84,7 +84,7 @@ class ScheduleFlowTest {
 
         repo.saveSchedule(pageId, listOf(entry(id, 16 * 60 + 30, "call mum")))
         assertEquals(1, alarms().size)
-        assertEquals(ms("2026-10-18T16:20:00Z"), alarms().single().triggerAtMs)
+        assertEquals(ms("2026-10-18T16:30:00Z"), alarms().single().triggerAtMs)
 
         repo.saveSchedule(pageId, emptyList())
         assertEquals(0, alarms().size)
@@ -100,17 +100,14 @@ class ScheduleFlowTest {
     }
 
     @Test
-    fun soonEntryFiresInFiveSecondsOnceAndEmitsOutcome() = runBlocking {
-        val first = async(start = CoroutineStart.UNDISPATCHED) { scheduler.outcomes.first() }
+    fun futureEntryRegistersAtExactInstantWithMinuteExtra() = runBlocking {
         val saved = repo.saveSchedule(pageId, listOf(entry(0, 9 * 60 + 5, "soon")))
-        val outcome = first.await()
-        assertEquals(AlarmKind.IMMEDIATE, outcome.kind)
-        assertEquals(saved.single().id, outcome.entryId)
-        assertEquals(ms("2026-10-18T09:00:05Z"), alarms().single().triggerAtMs)
-
-        // Boot or resume must not re-fire an immediate already scheduled for this entry, time and text.
+        val alarm = alarms().single()
+        assertEquals(ms("2026-10-18T09:05:00Z"), alarm.triggerAtMs)
+        assertEquals(9 * 60 + 5, shadowOf(op(alarm)).savedIntent.getIntExtra(Notifications.EXTRA_MINUTE, -2))
+        // Boot or resume re-registers the same alarm.
         scheduler.rescheduleAll(saved, "test")
-        assertEquals(0, alarms().size)
+        assertEquals(1, alarms().size)
     }
 
     @Test
@@ -140,6 +137,7 @@ class ScheduleFlowTest {
         val intent = shadowOf(op(alarm)).savedIntent
         assertEquals(-1L, intent.getLongExtra(Notifications.EXTRA_ENTRY_ID, 0))
         assertEquals("Test reminder", intent.getStringExtra(Notifications.EXTRA_TEXT))
+        assertEquals(-1, intent.getIntExtra(Notifications.EXTRA_MINUTE, -2))
     }
 
     @Test
@@ -151,7 +149,7 @@ class ScheduleFlowTest {
         val text = log.readAll()
         assertTrue(text.contains("CANCEL id=5"))
         assertTrue(text.contains("SCHEDULE id=5 date=2026-10-18"))
-        assertTrue(text.contains("exact immediate=false textLen=6"))
+        assertTrue(text.contains("exact textLen=6"))
         assertTrue(text.contains("RESCHEDULE_ALL reason=boot entries=1 registered=1"))
         assertTrue(!text.contains("secret"))
     }

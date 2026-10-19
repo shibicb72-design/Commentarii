@@ -49,12 +49,10 @@ fun DailyPageScreen(
     val blocked by container.notificationsBlocked.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val snackbar = remember { SnackbarHostState() }
-    val immediateText = stringResource(R.string.outcome_immediate)
     val pastText = stringResource(R.string.outcome_past)
     LaunchedEffect(container) {
         container.alarms.outcomes.collect { outcome ->
             val text = when (outcomeMessageRes(outcome.kind)) {
-                R.string.outcome_immediate -> immediateText
                 R.string.outcome_past -> pastText
                 else -> null
             }

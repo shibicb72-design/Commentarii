@@ -35,6 +35,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import com.shibi.commentarii.ui.components.FirstLineRow
+import com.shibi.commentarii.ui.components.checklistTextStyle
+import com.shibi.commentarii.ui.components.firstLineTopPadding
 import com.shibi.commentarii.ui.theme.AppColors
 
 /** Underlined single/multi-line field. Text, placeholder and cursor colours all derive from the surrounding content colour. */
@@ -51,13 +54,13 @@ fun LineField(
     minLines: Int = 1,
 ) {
     val content = LocalContentColor.current
-    val style = MaterialTheme.typography.bodyLarge.copy(
+    val style = checklistTextStyle(MaterialTheme.typography.bodyLarge).copy(
         color = content,
         textDecoration = if (strike) TextDecoration.LineThrough else TextDecoration.None,
     )
+    val bottomPad = firstLineTopPadding(style)
     Column(modifier.fillMaxWidth()) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            leading?.invoke()
+        FirstLineRow(style, leading, trailing = trailing) { pos ->
             BasicTextField(
                 value = value,
                 onValueChange = onValueChange,
@@ -68,7 +71,8 @@ fun LineField(
                 cursorBrush = SolidColor(content),
                 modifier = Modifier
                     .weight(1f)
-                    .padding(vertical = 10.dp),
+                    .then(pos)
+                    .padding(bottom = bottomPad),
                 decorationBox = { inner ->
                     Box {
                         if (value.isEmpty()) {
@@ -78,7 +82,6 @@ fun LineField(
                     }
                 },
             )
-            trailing?.invoke()
         }
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
     }

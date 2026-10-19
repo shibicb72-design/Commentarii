@@ -23,3 +23,6 @@ Carried over from Theatrum (local_music_player) where they apply:
 - [alarms] request code was an xor-hash of the id and the PendingIntent had no per-entry identity -> action + `commentarii://alarm/<id>` data and requestCode = id.toInt(); cancel with an identical FLAG_NO_CREATE intent.
 - [notify] POST_NOTIFICATIONS was asked once only, with no guidance and no fire-time check -> ask whenever notifications are not enabled, expose notificationsBlocked for a settings shortcut, and log enabled/channel importance when posting.
 - [debug] reminders failed silently with nothing to inspect -> local ring log (DebugLog, 500 lines, no note text) for schedule, cancel, fire and reschedule events, plus a 10 s test reminder.
+- [alarms] superseded (fix3): the 10-min lead and the now+5 s immediate path are gone; alarms fire at the exact entry minute, past times are skipped with a snackbar "That time has passed - no reminder set".
+- [ui] checkbox/bullet text sat above the 48 dp control centre because of font padding plus ad-hoc vertical padding -> one `FirstLineRow` + `checklistTextStyle` (no font padding, centred line height) for every checklist-style row.
+- [nav] `settings/debug` was dropped by NavRestore.isValid so unlock landed on Settings -> validate against `Routes` constants.

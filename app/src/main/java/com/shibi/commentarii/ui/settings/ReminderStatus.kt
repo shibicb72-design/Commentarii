@@ -9,7 +9,6 @@ fun batteryStatusRes(unrestricted: Boolean): Int =
 
 /** Snackbar text for a schedule outcome; null for kinds the user needs no message about. */
 fun outcomeMessageRes(kind: AlarmKind): Int? = when (kind) {
-    AlarmKind.IMMEDIATE -> R.string.outcome_immediate
     AlarmKind.PAST -> R.string.outcome_past
     AlarmKind.SCHEDULED, AlarmKind.BLANK -> null
 }

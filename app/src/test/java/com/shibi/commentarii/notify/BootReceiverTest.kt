@@ -64,7 +64,7 @@ class BootReceiverTest {
     }
 
     private fun expectedTrigger(): Long =
-        tomorrow.atTime(LocalTime.of(10, 30)).atZone(app.container.zone).minusMinutes(10).toInstant().toEpochMilli()
+        tomorrow.atTime(LocalTime.of(10, 30)).atZone(app.container.zone).toInstant().toEpochMilli()
 
     @Test
     fun bootCompletedRegistersOnlyFutureNonBlankEntries() {

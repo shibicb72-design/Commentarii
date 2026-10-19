@@ -24,3 +24,28 @@ Note: no Opus tokens were recorded; in headless `-p` mode the main loop ran on S
 | fix1 | claude-haiku-5-5 | 6 | 716 | 28514 | 18309 | 0.003 |
 
 **Fix round: $1.18. Running total: $6.91.**
+
+## Reminder fix (fix2, Oct 18 11:12 PM ET), single Sonnet session (opusplan falls back to Sonnet headless)
+
+| Run | Model | Input | Output | Cache read | Cache write | Cost USD |
+|---|---|---|---|---|---|---|
+| fix2 | claude-sonnet-5-5 | 92 | 73814 | 2607368 | 219511 | 1.652 |
+| fix2 | claude-haiku-5-5 | 6 | 1118 | 28942 | 18627 | 0.003 |
+
+Usage (`claude -p /usage`): session 21% -> 24%, week 2% -> 2%.
+
+## Exact-minute reminders + checklist alignment (fix3): Opus plan -> Sonnet implement -> Opus review -> Sonnet fix
+
+| Step | Model | Input | Output | Cache read | Cache write | Cost USD |
+|---|---|---|---|---|---|---|
+| fix3-plan | claude-opus-5-5 | 12 | 7910 | 341597 | 81862 | 0.881 |
+| fix3-plan | claude-haiku-5-5 | 22 | 11291 | 310540 | 51834 | 0.015 |
+| fix3-impl | claude-sonnet-5-5 | 84 | 34945 | 4631232 | 125290 | 1.314 |
+| fix3-impl | claude-haiku-5-5 | 30 | 6953 | 136454 | 67495 | 0.013 |
+| fix3-review | claude-opus-5-5 | 24 | 8386 | 1024511 | 100351 | 1.176 |
+| fix3-review | claude-haiku-5-5 | 14 | 5567 | 55271 | 40481 | 0.008 |
+| fix3-fix | claude-sonnet-5-5 | 20 | 4665 | 636135 | 57375 | 0.340 |
+| fix3-fix | claude-haiku-5-5 | 10 | 2534 | 45887 | 20371 | 0.004 |
+
+Usage after each step: start 24% / week 2%; plan 26% / 2%; impl 29% / 3%; review 30% / 3%; fix 31% / 3%. (+7 session points for the feature.)
+fix3 total: $3.75. Running total: $12.30.

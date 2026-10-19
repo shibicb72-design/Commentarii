@@ -6,11 +6,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
@@ -75,6 +75,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.shibi.commentarii.AppContainer
 import com.shibi.commentarii.R
 import com.shibi.commentarii.data.BlockType
+import com.shibi.commentarii.ui.components.FirstLineRow
+import com.shibi.commentarii.ui.components.checklistTextStyle
 import com.shibi.commentarii.ui.theme.AppColors
 
 /** Note editor wired to [NoteEditorViewModel]; edits autosave (500 ms debounce) and flush when leaving. */
@@ -301,16 +303,9 @@ private fun BlockRow(
         }
     }
 
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
-        when (b.type) {
-            BlockType.BULLET -> Text("•", style = style, modifier = Modifier.padding(start = 8.dp, end = 10.dp, top = 6.dp))
-            BlockType.CHECKBOX -> Checkbox(
-                checked = b.checked,
-                onCheckedChange = { actions.onToggleChecked(item.key) },
-                modifier = Modifier.padding(end = 2.dp),
-            )
-            else -> Box(Modifier.width(0.dp))
-        }
+    val listLike = b.type == BlockType.BULLET || b.type == BlockType.CHECKBOX
+    val fieldStyle = if (listLike) checklistTextStyle(style) else style
+    val field: @Composable RowScope.(Modifier) -> Unit = { pos ->
         BasicTextField(
             value = value,
             onValueChange = { v ->
@@ -318,12 +313,12 @@ private fun BlockRow(
                 actions.onSelection(item.key, v.selection.start, v.selection.end)
                 if (v.text != b.text) actions.onBlockText(item.key, v.text)
             },
-            textStyle = style,
+            textStyle = fieldStyle,
             cursorBrush = SolidColor(content),
             visualTransformation = transformation,
             modifier = Modifier
                 .weight(1f)
-                .padding(vertical = 6.dp)
+                .then(pos)
                 .focusRequester(requester)
                 .onFocusChanged { if (it.isFocused) actions.onSelection(item.key, value.selection.start, value.selection.end) }
                 .onPreviewKeyEvent { e ->
@@ -339,12 +334,30 @@ private fun BlockRow(
             decorationBox = { inner ->
                 Box {
                     if (showHint && b.text.isEmpty()) {
-                        Text(stringResource(R.string.ed_body_hint), style = style.copy(color = content.copy(alpha = 0.5f)))
+                        Text(stringResource(R.string.ed_body_hint), style = fieldStyle.copy(color = content.copy(alpha = 0.5f)))
                     }
                     inner()
                 }
             },
         )
+    }
+    if (listLike) {
+        FirstLineRow(
+            fieldStyle,
+            leading = {
+                if (b.type == BlockType.BULLET) {
+                    Text("•", style = fieldStyle)
+                } else {
+                    Checkbox(checked = b.checked, onCheckedChange = { actions.onToggleChecked(item.key) })
+                }
+            },
+            modifier = Modifier.padding(bottom = 4.dp),
+            content = field,
+        )
+    } else {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+            field(Modifier.padding(vertical = 6.dp))
+        }
     }
 }
 

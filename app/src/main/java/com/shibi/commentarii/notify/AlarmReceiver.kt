@@ -16,7 +16,8 @@ class AlarmReceiver : BroadcastReceiver() {
                 log.log("FIRE", "id=$id dropped: blank text or date")
                 return
             }
-            Notifications.showReminder(context, id, date, text)
+            val minute = intent.getIntExtra(Notifications.EXTRA_MINUTE, -1)
+            Notifications.showReminder(context, id, date, text, minute)
         } catch (t: Throwable) {
             log.log("ERROR", "receiver failed: $t")
         }

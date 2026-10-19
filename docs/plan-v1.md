@@ -24,12 +24,12 @@ Package `data/` and `domain/`.
 - `domain/Rollover.kt`: pure function: given today, last page date (most recent DAILY before today) and its unfinished PRIORITY+TODO items,
   returns `RolloverOffer(fromDate, items)` or null. Only once per new day (lastOpenedDate < today). Never moves automatically;
   `applyRollover(selectedIds)` copies selected items to today's TODO (priorities go to today's priorities if slots free, else TODO) and marks originals as carried (keep text, done=false, add `carriedTo` date field).
-- `domain/AlarmTimes.kt`: pure: `triggerAt(date, minuteOfDay, zone): Instant? = (local datetime - 10 min) in zone`, null if <= now; handle DST gaps
+- `domain/AlarmTimes.kt`: pure: `triggerAt(date, minuteOfDay, zone, now): Instant? = the entry's local datetime in zone` (exact minute), null if <= now (past times are skipped, the UI shows a snackbar); handle DST gaps
   (use ZonedDateTime.of which shifts forward) and overlaps (earlier offset). `upcomingAlarms(entries, now, zone)` for entries with non-blank text.
 - `domain/Streaks.kt`: pure: current streak per self-care item = consecutive days ending today (or yesterday if today not yet checked) with a check.
 - `backup/ExportImport.kt`: export everything (pages, blocks, tasks, schedule, moods, self-care items+checks, folders, tags, refs, settings except lock) to one JSON
   (org.json or a hand-written serializer; formatVersion=1). Import replaces all data in one transaction after validating formatVersion. Round-trip test with Robolectric in-memory Room.
-- Tests: `RolloverTest`, `AlarmTimesTest` (10 min before, custom 7:35 -> 7:25, past skipped, DST spring-forward 2:30 America/New_York on 2026-03-08, fall-back 1:30 on 2026-11-01, blank text skipped, 00:05 entry -> previous day 23:55),
+- Tests: `RolloverTest`, `AlarmTimesTest` (exact minute, custom 7:35 -> 7:35, past skipped, DST spring-forward 2:30 America/New_York on 2026-03-08, fall-back 1:30 on 2026-11-01, blank text skipped, 00:05 entry -> 00:05 same day),
   `StreaksTest`, `ExportImportRoundTripTest`, `PageRepositoryTest` (daily page unique per date, FTS finds both types, pin ordering, folders/tags).
 - Write `docs/architecture.md` (data model, how a new template type plugs in: add type + section kinds + a renderer, no migration needed for JSON-payload sections).
 
@@ -66,7 +66,7 @@ Package `data/` and `domain/`.
 - Notifications: channel "Schedule reminders". `AlarmScheduler` using AlarmManager: manifest declares USE_EXACT_ALARM? NO - USE_EXACT_ALARM is only for alarm/calendar apps and
   Play-policy restricted; use SCHEDULE_EXACT_ALARM (maxSdkVersion not set) + `canScheduleExactAlarms()`; if not granted, use setAndAllowWhileIdle (inexact) and show
   a one-time explainer in Settings with a button to ACTION_REQUEST_SCHEDULE_EXACT_ALARM. Exact: setExactAndAllowWhileIdle.
-  PendingIntent per entry id (requestCode = entry id hash), extras date+text. `AlarmReceiver` posts notification "In 10 min: <text>" with content intent opening
+  PendingIntent per entry id (requestCode = entry id hash), extras date+text. `AlarmReceiver` posts notification "Now (hh:mm): <text>" with content intent opening
   MainActivity with `daily/{date}` deep link. `BootReceiver` for BOOT_COMPLETED, TIMEZONE_CHANGED, TIME_SET, MY_PACKAGE_REPLACED -> reschedule all future entries.
   Schedule/cancel on entry edit/delete. Never schedule past times (use AlarmTimes). Request POST_NOTIFICATIONS (API 33+) only the first time a timed entry gets text.
   Also handle ACTION_SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED -> reschedule.

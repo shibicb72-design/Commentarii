@@ -22,7 +22,7 @@ No triggers. `PageRepository.rebuildFts(pageId)` rewrites the page row: title pl
 Manual DI through `AppContainer` (created in `CommentariiApp`). It owns the `CommentariiDatabase`, `SettingsRepository` (DataStore: lock, export reminder, last export, last opened date, reminder dismissal, dark mode), `PageRepository`, `SelfCareRepository` and `ExportImport`. DAOs: `PageDao` (pages, blocks, tasks, schedule, mood, FTS, folders, tags, backup bulk methods), `SelfCareDao`.
 
 ## Domain (pure functions, `domain/`)
-No Android dependencies, unit tested: `Rollover` (carry unfinished tasks to the next day), `Streaks` (self-care streak counting), `AlarmTimes` (next reminder times).
+No Android dependencies, unit tested: `Rollover` (carry unfinished tasks to the next day), `Streaks` (self-care streak counting), `AlarmTimes` (exact-minute reminder times; past entries are skipped).
 
 ## Export / import (`backup/ExportImport.kt`)
 One JSON document, `formatVersion` = 1:
