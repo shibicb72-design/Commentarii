@@ -37,7 +37,9 @@ class WeekViewModel(
     private val selfCare = container.selfCare
     private val days = weekDays(monday)
 
-    private val _state = MutableStateFlow(WeekUiState(monday = monday, today = LocalDate.now(container.clock)))
+    private val _state = MutableStateFlow(
+        WeekUiState(monday = monday, today = LocalDate.now(container.clock), loaded = false),
+    )
     val state: StateFlow<WeekUiState> = _state.asStateFlow()
 
     private val keyGen = AtomicLong(1)
@@ -72,6 +74,7 @@ class WeekViewModel(
                 notes = text(SectionKind.NOTES),
                 reviewWell = text(SectionKind.REVIEW_WELL),
                 reviewImprove = text(SectionKind.REVIEW_IMPROVE),
+                loaded = true,
             )
         }
         autosaver.markReady()

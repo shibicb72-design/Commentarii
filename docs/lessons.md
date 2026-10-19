@@ -27,3 +27,4 @@ Carried over from Theatrum (local_music_player) where they apply:
 - [ui] checkbox/bullet text sat above the 48 dp control centre because of font padding plus ad-hoc vertical padding -> one `FirstLineRow` + `checklistTextStyle` (no font padding, centred line height) for every checklist-style row.
 - [nav] `settings/debug` was dropped by NavRestore.isValid so unlock landed on Settings -> validate against `Routes` constants.
 - [db] unique index on `pages.date` would clash a weekly (Monday) or monthly (1st) page with that day's DAILY page -> v2 migration to unique `(type, date)`; check unique indices before adding page types that reuse a date.
+- [ui] `LineField` was `singleLine` so long To-Do/Don't Forget text was cut off -> always wrap (newlines stripped unless `allowNewlines`); Week/Month dropped pre-load input silently -> `loaded` in UiState drives `enabled` (readOnly keeps normal text colour, toggles/buttons inert) so the UI matches the ViewModel gate.

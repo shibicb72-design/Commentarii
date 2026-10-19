@@ -1,4 +1,4 @@
-package com.shibi.commentarii.ui.week
+﻿package com.shibi.commentarii.ui.week
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -55,30 +55,30 @@ fun WeekPageContent(
                 item {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                            GoalsCard(state.goals, actions.goals, maxItems = WeekViewModel.GOAL_SLOTS)
-                            TodoCard(state.todo, actions.todo)
-                            DontForgetCard(state.dontForget, actions.dontForget)
-                            WeekHabitCard(days, state.habits, actions.onToggleHabit)
+                            GoalsCard(state.goals, actions.goals, maxItems = WeekViewModel.GOAL_SLOTS, enabled = state.loaded)
+                            TodoCard(state.todo, actions.todo, enabled = state.loaded)
+                            DontForgetCard(state.dontForget, actions.dontForget, enabled = state.loaded)
+                            WeekHabitCard(days, state.habits, actions.onToggleHabit, enabled = state.loaded)
                             WeekMoodCard(days, state.moods, actions.onOpenDay)
                         }
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                             WeekDaysCard(state.days, state.today, actions.onOpenDay)
-                            NotesCard(state.notes, actions.onNotes)
-                            ReviewCard(stringResource(R.string.section_review_well), state.reviewWell, actions.onReviewWell)
-                            ReviewCard(stringResource(R.string.section_review_improve), state.reviewImprove, actions.onReviewImprove)
+                            NotesCard(state.notes, actions.onNotes, enabled = state.loaded)
+                            ReviewCard(stringResource(R.string.section_review_well), state.reviewWell, actions.onReviewWell, enabled = state.loaded)
+                            ReviewCard(stringResource(R.string.section_review_improve), state.reviewImprove, actions.onReviewImprove, enabled = state.loaded)
                         }
                     }
                 }
             } else {
-                item { GoalsCard(state.goals, actions.goals, maxItems = WeekViewModel.GOAL_SLOTS) }
+                item { GoalsCard(state.goals, actions.goals, maxItems = WeekViewModel.GOAL_SLOTS, enabled = state.loaded) }
                 item { WeekDaysCard(state.days, state.today, actions.onOpenDay) }
-                item { TodoCard(state.todo, actions.todo) }
-                item { DontForgetCard(state.dontForget, actions.dontForget) }
-                item { WeekHabitCard(days, state.habits, actions.onToggleHabit) }
+                item { TodoCard(state.todo, actions.todo, enabled = state.loaded) }
+                item { DontForgetCard(state.dontForget, actions.dontForget, enabled = state.loaded) }
+                item { WeekHabitCard(days, state.habits, actions.onToggleHabit, enabled = state.loaded) }
                 item { WeekMoodCard(days, state.moods, actions.onOpenDay) }
-                item { NotesCard(state.notes, actions.onNotes) }
-                item { ReviewCard(stringResource(R.string.section_review_well), state.reviewWell, actions.onReviewWell) }
-                item { ReviewCard(stringResource(R.string.section_review_improve), state.reviewImprove, actions.onReviewImprove) }
+                item { NotesCard(state.notes, actions.onNotes, enabled = state.loaded) }
+                item { ReviewCard(stringResource(R.string.section_review_well), state.reviewWell, actions.onReviewWell, enabled = state.loaded) }
+                item { ReviewCard(stringResource(R.string.section_review_improve), state.reviewImprove, actions.onReviewImprove, enabled = state.loaded) }
             }
         }
     }

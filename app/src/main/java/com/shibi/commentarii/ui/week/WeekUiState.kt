@@ -30,6 +30,8 @@ data class WeekUiState(
     val notes: String = "",
     val reviewWell: String = "",
     val reviewImprove: String = "",
+    /** False until the ViewModel finished its initial load; editing is disabled meanwhile. */
+    val loaded: Boolean = true,
 ) {
     internal fun tasksOf(section: String): List<TaskUi> = when (section) {
         TaskSection.GOALS -> goals

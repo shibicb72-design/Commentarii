@@ -76,7 +76,7 @@ fun PrioritiesCard(items: List<TaskUi>, actions: TaskListActions, modifier: Modi
 }
 
 @Composable
-fun TodoCard(items: List<TaskUi>, actions: TaskListActions, modifier: Modifier = Modifier) {
+fun TodoCard(items: List<TaskUi>, actions: TaskListActions, modifier: Modifier = Modifier, enabled: Boolean = true) {
     SectionCard(stringResource(R.string.section_todo), modifier) {
         items.forEachIndexed { i, item ->
             LineField(
@@ -84,45 +84,57 @@ fun TodoCard(items: List<TaskUi>, actions: TaskListActions, modifier: Modifier =
                 onValueChange = { actions.onText(i, it) },
                 placeholder = stringResource(R.string.daily_todo_hint),
                 strike = item.done,
-                leading = { CircleCheck(item.done, { actions.onToggleDone(i) }) },
+                enabled = enabled,
+                leading = { CircleCheck(item.done, { actions.onToggleDone(i) }, enabled = enabled) },
                 trailing = {
                     SmallIconButton(
                         Icons.Filled.KeyboardArrowUp,
                         stringResource(R.string.daily_move_up),
                         { actions.onMove(i, -1) },
-                        enabled = i > 0,
+                        enabled = enabled && i > 0,
                     )
                     SmallIconButton(
                         Icons.Filled.KeyboardArrowDown,
                         stringResource(R.string.daily_move_down),
                         { actions.onMove(i, 1) },
-                        enabled = i < items.lastIndex,
+                        enabled = enabled && i < items.lastIndex,
                     )
-                    SmallIconButton(Icons.Filled.Close, stringResource(R.string.daily_remove), { actions.onRemove(i) })
+                    SmallIconButton(
+                        Icons.Filled.Close,
+                        stringResource(R.string.daily_remove),
+                        { actions.onRemove(i) },
+                        enabled = enabled,
+                    )
                 },
             )
         }
-        AddRowButton(stringResource(R.string.daily_add_item), actions.onAdd)
+        AddRowButton(stringResource(R.string.daily_add_item), actions.onAdd, enabled = enabled)
     }
 }
 
 @Composable
-fun DontForgetCard(items: List<TaskUi>, actions: TaskListActions, modifier: Modifier = Modifier) {
+fun DontForgetCard(items: List<TaskUi>, actions: TaskListActions, modifier: Modifier = Modifier, enabled: Boolean = true) {
     SectionCard(stringResource(R.string.section_dont_forget), modifier) {
         items.forEachIndexed { i, item ->
             LineField(
                 value = item.text,
                 onValueChange = { actions.onText(i, it) },
                 placeholder = stringResource(R.string.daily_dont_forget_hint),
+                enabled = enabled,
                 leading = {
                     Box(Modifier.size(6.dp).background(LocalContentColor.current, CircleShape))
                 },
                 trailing = {
-                    SmallIconButton(Icons.Filled.Close, stringResource(R.string.daily_remove), { actions.onRemove(i) })
+                    SmallIconButton(
+                        Icons.Filled.Close,
+                        stringResource(R.string.daily_remove),
+                        { actions.onRemove(i) },
+                        enabled = enabled,
+                    )
                 },
             )
         }
-        AddRowButton(stringResource(R.string.daily_add_line), actions.onAdd)
+        AddRowButton(stringResource(R.string.daily_add_line), actions.onAdd, enabled = enabled)
     }
 }
 
@@ -358,14 +370,15 @@ fun MoodCard(mood: Int?, onMood: (Int) -> Unit, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun NotesCard(notes: String, onNotes: (String) -> Unit, modifier: Modifier = Modifier) {
+fun NotesCard(notes: String, onNotes: (String) -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
     SectionCard(stringResource(R.string.section_notes), modifier) {
         Box {
             LineField(
                 value = notes,
                 onValueChange = onNotes,
                 placeholder = stringResource(R.string.daily_notes_hint),
-                singleLine = false,
+                allowNewlines = true,
+                enabled = enabled,
                 minLines = 5,
             )
         }

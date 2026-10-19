@@ -21,6 +21,7 @@ fun GoalsCard(
     actions: TaskListActions,
     maxItems: Int?,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
 ) {
     SectionCard(stringResource(R.string.section_goals), modifier) {
         items.forEachIndexed { i, item ->
@@ -29,27 +30,34 @@ fun GoalsCard(
                 onValueChange = { actions.onText(i, it) },
                 placeholder = stringResource(R.string.goal_hint, i + 1),
                 strike = item.done,
-                leading = { CircleCheck(item.done, { actions.onToggleDone(i) }) },
+                enabled = enabled,
+                leading = { CircleCheck(item.done, { actions.onToggleDone(i) }, enabled = enabled) },
                 trailing = {
-                    SmallIconButton(Icons.Filled.Close, stringResource(R.string.daily_remove), { actions.onRemove(i) })
+                    SmallIconButton(
+                        Icons.Filled.Close,
+                        stringResource(R.string.daily_remove),
+                        { actions.onRemove(i) },
+                        enabled = enabled,
+                    )
                 },
             )
         }
         if (maxItems == null || items.size < maxItems) {
-            AddRowButton(stringResource(R.string.daily_add_item), actions.onAdd)
+            AddRowButton(stringResource(R.string.daily_add_item), actions.onAdd, enabled = enabled)
         }
     }
 }
 
 /** Free-text review box (what went well, what to improve, month review). */
 @Composable
-fun ReviewCard(title: String, text: String, onText: (String) -> Unit, modifier: Modifier = Modifier) {
+fun ReviewCard(title: String, text: String, onText: (String) -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
     SectionCard(title, modifier) {
         LineField(
             value = text,
             onValueChange = onText,
             placeholder = stringResource(R.string.review_hint),
-            singleLine = false,
+            allowNewlines = true,
+            enabled = enabled,
             minLines = 3,
         )
     }

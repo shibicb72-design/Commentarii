@@ -96,6 +96,7 @@ fun WeekHabitCard(
     habits: List<WeekHabitUi>,
     onToggle: (itemId: Long, date: LocalDate) -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
 ) {
     val initials = remember(days) { days.map { it.dayOfWeek.getDisplayName(TextStyle.NARROW, Locale.getDefault()) } }
     SectionCard(stringResource(R.string.section_self_care), modifier) {
@@ -114,7 +115,7 @@ fun WeekHabitCard(
             Row(Modifier.fillMaxWidth()) {
                 days.forEachIndexed { i, date ->
                     Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                        CircleCheck(habit.checks.getOrElse(i) { false }, { onToggle(habit.id, date) })
+                        CircleCheck(habit.checks.getOrElse(i) { false }, { onToggle(habit.id, date) }, enabled = enabled)
                     }
                 }
             }

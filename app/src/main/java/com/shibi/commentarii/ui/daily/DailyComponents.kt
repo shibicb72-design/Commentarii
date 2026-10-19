@@ -33,6 +33,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import com.shibi.commentarii.ui.components.FirstLineRow
@@ -40,7 +41,11 @@ import com.shibi.commentarii.ui.components.checklistTextStyle
 import com.shibi.commentarii.ui.components.firstLineTopPadding
 import com.shibi.commentarii.ui.theme.AppColors
 
-/** Underlined single/multi-line field. Text, placeholder and cursor colours all derive from the surrounding content colour. */
+/**
+ * Underlined field that wraps long text over several lines (leading/trailing stay on the first line). Newlines are
+ * stripped unless [allowNewlines]. When not [enabled] the text is read-only but keeps its normal colour.
+ * Text, placeholder and cursor colours all derive from the surrounding content colour.
+ */
 @Composable
 fun LineField(
     value: String,
@@ -50,8 +55,9 @@ fun LineField(
     leading: (@Composable () -> Unit)? = null,
     trailing: (@Composable () -> Unit)? = null,
     strike: Boolean = false,
-    singleLine: Boolean = true,
+    allowNewlines: Boolean = false,
     minLines: Int = 1,
+    enabled: Boolean = true,
 ) {
     val content = LocalContentColor.current
     val style = checklistTextStyle(MaterialTheme.typography.bodyLarge).copy(
@@ -63,11 +69,11 @@ fun LineField(
         FirstLineRow(style, leading, trailing = trailing) { pos ->
             BasicTextField(
                 value = value,
-                onValueChange = onValueChange,
+                onValueChange = { onValueChange(if (allowNewlines) it else it.replace('\n', ' ')) },
+                readOnly = !enabled,
                 textStyle = style,
-                singleLine = singleLine,
                 minLines = minLines,
-                keyboardOptions = KeyboardOptions.Default,
+                keyboardOptions = if (allowNewlines) KeyboardOptions.Default else KeyboardOptions(imeAction = ImeAction.Done),
                 cursorBrush = SolidColor(content),
                 modifier = Modifier
                     .weight(1f)
@@ -89,14 +95,14 @@ fun LineField(
 
 /** Round checkbox with a tick when checked. */
 @Composable
-fun CircleCheck(checked: Boolean, onToggle: () -> Unit, modifier: Modifier = Modifier) {
+fun CircleCheck(checked: Boolean, onToggle: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
     val primary = MaterialTheme.colorScheme.primary
     val ring = if (checked) primary else LocalContentColor.current.copy(alpha = 0.7f)
     Box(
         modifier
             .size(40.dp)
             .clip(CircleShape)
-            .toggleable(value = checked, role = Role.Checkbox, onValueChange = { onToggle() }),
+            .toggleable(value = checked, enabled = enabled, role = Role.Checkbox, onValueChange = { onToggle() }),
         contentAlignment = Alignment.Center,
     ) {
         Box(
@@ -133,8 +139,8 @@ fun SmallIconButton(
 }
 
 @Composable
-fun AddRowButton(label: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    TextButton(onClick = onClick, modifier = modifier) {
+fun AddRowButton(label: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
+    TextButton(onClick = onClick, enabled = enabled, modifier = modifier) {
         Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(18.dp))
         Text(label, modifier = Modifier.padding(start = 6.dp))
     }

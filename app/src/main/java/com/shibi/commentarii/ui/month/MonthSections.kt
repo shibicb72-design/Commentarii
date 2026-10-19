@@ -146,6 +146,7 @@ fun EventsCard(
     onDate: (key: Long, date: LocalDate) -> Unit,
     onRemove: (key: Long) -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
 ) {
     SectionCard(stringResource(R.string.section_events), modifier) {
         events.forEach { event ->
@@ -156,11 +157,17 @@ fun EventsCard(
                     value = event.text,
                     onValueChange = { onText(event.key, it) },
                     placeholder = stringResource(R.string.event_hint),
+                    enabled = enabled,
                     leading = {
-                        TextButton(onClick = { picking = true }) { Text(date.format(EventDateFormat)) }
+                        TextButton(onClick = { picking = true }, enabled = enabled) { Text(date.format(EventDateFormat)) }
                     },
                     trailing = {
-                        SmallIconButton(Icons.Filled.Close, stringResource(R.string.daily_remove), { onRemove(event.key) })
+                        SmallIconButton(
+                            Icons.Filled.Close,
+                            stringResource(R.string.daily_remove),
+                            { onRemove(event.key) },
+                            enabled = enabled,
+                        )
                     },
                 )
                 if (picking) {
@@ -168,7 +175,7 @@ fun EventsCard(
                 }
             }
         }
-        AddRowButton(stringResource(R.string.event_add), onAdd)
+        AddRowButton(stringResource(R.string.event_add), onAdd, enabled = enabled)
     }
 }
 

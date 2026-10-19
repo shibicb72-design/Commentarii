@@ -1,4 +1,4 @@
-package com.shibi.commentarii.ui.month
+﻿package com.shibi.commentarii.ui.month
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -54,24 +54,24 @@ fun MonthPageContent(
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                             MonthCalendarCard(state.grid, state.today, actions.onOpenDay)
                             HabitSummaryCard(state.habits)
-                            ReviewCard(stringResource(R.string.section_review), state.review, actions.onReview)
+                            ReviewCard(stringResource(R.string.section_review), state.review, actions.onReview, enabled = state.loaded)
                         }
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                            GoalsCard(state.goals, actions.goals, maxItems = null)
+                            GoalsCard(state.goals, actions.goals, maxItems = null, enabled = state.loaded)
                             EventsSection(state, actions)
-                            TodoCard(state.todo, actions.todo)
-                            NotesCard(state.notes, actions.onNotes)
+                            TodoCard(state.todo, actions.todo, enabled = state.loaded)
+                            NotesCard(state.notes, actions.onNotes, enabled = state.loaded)
                         }
                     }
                 }
             } else {
                 item { MonthCalendarCard(state.grid, state.today, actions.onOpenDay) }
-                item { GoalsCard(state.goals, actions.goals, maxItems = null) }
+                item { GoalsCard(state.goals, actions.goals, maxItems = null, enabled = state.loaded) }
                 item { EventsSection(state, actions) }
-                item { TodoCard(state.todo, actions.todo) }
+                item { TodoCard(state.todo, actions.todo, enabled = state.loaded) }
                 item { HabitSummaryCard(state.habits) }
-                item { NotesCard(state.notes, actions.onNotes) }
-                item { ReviewCard(stringResource(R.string.section_review), state.review, actions.onReview) }
+                item { NotesCard(state.notes, actions.onNotes, enabled = state.loaded) }
+                item { ReviewCard(stringResource(R.string.section_review), state.review, actions.onReview, enabled = state.loaded) }
             }
         }
     }
@@ -84,6 +84,7 @@ private fun EventsSection(state: MonthUiState, actions: MonthActions) = EventsCa
     onText = actions.onEventText,
     onDate = actions.onEventDate,
     onRemove = actions.onRemoveEvent,
+    enabled = state.loaded,
 )
 
 @Composable

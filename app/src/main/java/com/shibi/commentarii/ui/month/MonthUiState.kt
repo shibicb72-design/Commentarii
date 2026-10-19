@@ -31,6 +31,8 @@ data class MonthUiState(
     val habits: List<MonthHabitUi> = emptyList(),
     val notes: String = "",
     val review: String = "",
+    /** False until the ViewModel finished its initial load; editing is disabled meanwhile. */
+    val loaded: Boolean = true,
 ) {
     internal fun tasksOf(section: String): List<TaskUi> = if (section == TaskSection.GOALS) goals else todo
 

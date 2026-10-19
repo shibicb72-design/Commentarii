@@ -68,3 +68,14 @@ v2 total: $6.25. Running total: $18.55.
 
 Diagnosis of the spike: the Sonnet implement step was 99 turns in one context. It re-read 12.5M cache tokens (about $3.4, 9 of the 13 points). Output was 108k and cache writes 261k, so the cost came from re-reading a growing context on every turn, not from big files or logs (gradle output went through Haiku). Opus review: 2.0M cache reads over 26 turns (it read the full diff file by file).
 Fix for next time: split a large feature's IMPLEMENT into 2-3 sub-tickets (data/domain, UI, tests+screenshots), each a fresh `claude -p --model sonnet` run, so context resets between them. Give the review a `git diff --stat` plus a list of the plan's key files instead of the whole diff. Judgment: v2 (2 screens, 3 new page types, migration, 40 tests, 8 screenshots) justified a big run, but the context growth did not.
+
+## fix4: wrapping rows + Week/Month load gate. Short pipeline: one fresh Sonnet run, then a brief Opus review given only the summary and diff stat
+
+| Step | Model | Input | Output | Cache read | Cache write | Cost USD |
+|---|---|---|---|---|---|---|
+| fix4-impl | claude-sonnet-5-5 | 32 | 18176 | 1398869 | 96227 | 0.707 |
+| fix4-impl | claude-haiku-5-5 | 12 | 1389 | 50964 | 31473 | 0.005 |
+| fix4-review | claude-opus-5-5 | 12 | 2462 | 316264 | 46889 | 0.488 |
+
+Usage: start 44% / week 4%; impl 46% / 4%; review 46% / 4% (+2 points). fix4 total: $1.20. Running total: $19.75.
+Top consumers: the Sonnet implement step (49 turns, 1.4M cache read, $0.71), then the Opus review (316k cache read, $0.49, mostly its fixed system/context load). The review couldn't see the DailyComponents diff within its 3-file limit, so the planner checked the wrapping in the screenshot instead.

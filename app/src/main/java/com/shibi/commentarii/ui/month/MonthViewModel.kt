@@ -43,6 +43,7 @@ class MonthViewModel(
             month = month,
             today = today,
             grid = cells.map { MonthDayUi(it.date, it.inMonth) },
+            loaded = false,
         ),
     )
     val state: StateFlow<MonthUiState> = _state.asStateFlow()
@@ -79,6 +80,7 @@ class MonthViewModel(
                 events = events,
                 notes = text(SectionKind.NOTES),
                 review = text(SectionKind.REVIEW),
+                loaded = true,
             )
         }
         autosaver.markReady()
