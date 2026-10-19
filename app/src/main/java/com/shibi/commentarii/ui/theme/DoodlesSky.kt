@@ -99,12 +99,16 @@ private val SunYellow = Color(0xFFFFD95E)
 private val RainbowBlue = Color(0xFFB9D8F8)
 
 internal fun DrawScope.drawSunFace(ink: DoodleInk, sticker: Boolean, t: Float = 0f) {
-    val rayFill = ink.a(lerp(SunYellow, Color.White, .15f))
+    val warm = lerp(SunYellow, Color(0xFFFF9E3D), .4f)
+    val rayFill = ink.a(warm)
     rotate(t * 12f, Offset(50f, 50f)) {
         for (i in 0 until 12) {
             rotate(i * 30f, Offset(50f, 50f)) {
-                drawPath(SK.sunRay, rayFill)
-                drawPath(SK.sunRay, ink.lineOf(SunYellow), style = Stroke(1.6f, cap = StrokeCap.Round))
+                // larger rays: stretched 1.35x outward from the sun centre
+                withTransform({ scale(1.35f, 1.35f, Offset(50f, 50f)) }) {
+                    drawPath(SK.sunRay, rayFill)
+                    drawPath(SK.sunRay, ink.lineOf(warm), style = Stroke(1.4f, cap = StrokeCap.Round))
+                }
             }
         }
     }
@@ -114,12 +118,16 @@ internal fun DrawScope.drawSunFace(ink: DoodleInk, sticker: Boolean, t: Float = 
 }
 
 internal fun DrawScope.drawCloudPuff(ink: DoodleInk, sticker: Boolean) {
+    val underside = Color(0xFFA9CBEA)
     diecut(ink, sticker, SK.cloud)
     lay(SK.cloud, ink, Color.White)
     clipPath(SK.cloud) {
-        drawRect(ink.a(lerp(ink.fill, Color.White, .45f)), Offset(0f, 60f), Size(100f, 14f))
+        // soft blue underside in two bands, then a subtle top highlight
+        drawRect(ink.a(lerp(Color.White, underside, .55f)), Offset(0f, 58f), Size(100f, 16f))
+        drawRect(ink.a(underside), Offset(0f, 65f), Size(100f, 9f))
+        drawOval(ink.a(Color.White), Offset(26f, 32f), Size(34f, 12f))
     }
-    drawPath(SK.cloud, ink.lineOf(ink.fill), style = Stroke(2.2f, cap = StrokeCap.Round))
+    drawPath(SK.cloud, ink.lineOf(lerp(ink.fill, underside, .5f)), style = Stroke(2.2f, cap = StrokeCap.Round))
 }
 
 internal fun DrawScope.drawCloudFace(ink: DoodleInk, sticker: Boolean, t: Float = 0f) {
