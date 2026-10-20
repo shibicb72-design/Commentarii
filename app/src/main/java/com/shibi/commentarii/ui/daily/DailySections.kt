@@ -12,10 +12,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.SentimentDissatisfied
@@ -40,23 +37,22 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.shibi.commentarii.R
-import com.shibi.commentarii.ui.components.FirstLineRow
-import com.shibi.commentarii.ui.components.checklistTextStyle
 import com.shibi.commentarii.ui.theme.AppColors
+import com.shibi.commentarii.ui.theme.ThemedBullet
+import com.shibi.commentarii.ui.theme.currentArt
+import com.shibi.commentarii.ui.theme.themedBadge
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
 @Composable
 fun PrioritiesCard(items: List<TaskUi>, actions: TaskListActions, modifier: Modifier = Modifier) {
+    val art = currentArt()
     SectionCard(stringResource(R.string.section_priorities), modifier) {
         items.forEachIndexed { i, item ->
             LineField(
@@ -66,7 +62,13 @@ fun PrioritiesCard(items: List<TaskUi>, actions: TaskListActions, modifier: Modi
                 strike = item.done,
                 leading = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("${i + 1}.", style = MaterialTheme.typography.titleMedium, modifier = Modifier.width(26.dp))
+                        Text(
+                            "${i + 1}.",
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.width(26.dp).then(
+                                if (art != null) Modifier.themedBadge(i, art.second) else Modifier,
+                            ),
+                        )
                         CircleCheck(item.done, { actions.onToggleDone(i) })
                     }
                 },
@@ -122,7 +124,7 @@ fun DontForgetCard(items: List<TaskUi>, actions: TaskListActions, modifier: Modi
                 placeholder = stringResource(R.string.daily_dont_forget_hint),
                 enabled = enabled,
                 leading = {
-                    Box(Modifier.size(6.dp).background(LocalContentColor.current, CircleShape))
+                    ThemedBullet(i)
                 },
                 trailing = {
                     SmallIconButton(
@@ -135,31 +137,6 @@ fun DontForgetCard(items: List<TaskUi>, actions: TaskListActions, modifier: Modi
             )
         }
         AddRowButton(stringResource(R.string.daily_add_line), actions.onAdd, enabled = enabled)
-    }
-}
-
-@Composable
-fun GratefulCard(items: List<TaskUi>, actions: TaskListActions, modifier: Modifier = Modifier) {
-    SectionCard(stringResource(R.string.section_grateful), modifier) {
-        items.forEachIndexed { i, item ->
-            LineField(
-                value = item.text,
-                onValueChange = { actions.onText(i, it) },
-                placeholder = stringResource(R.string.daily_grateful_hint),
-                leading = {
-                    Icon(
-                        painterResource(R.drawable.ic_heart),
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(horizontal = 8.dp).size(18.dp),
-                    )
-                },
-                trailing = {
-                    SmallIconButton(Icons.Filled.Close, stringResource(R.string.daily_remove), { actions.onRemove(i) })
-                },
-            )
-        }
-        AddRowButton(stringResource(R.string.daily_add_line), actions.onAdd)
     }
 }
 
@@ -235,106 +212,6 @@ private fun TimePickerDialog(onDismiss: () -> Unit, onConfirm: (Int) -> Unit) {
                 }
             }
         }
-    }
-}
-
-@Composable
-fun SelfCareCard(
-    items: List<SelfCareUi>,
-    onToggle: (Long) -> Unit,
-    onAdd: (String) -> Unit,
-    onRename: (Long, String) -> Unit,
-    onRemove: (Long) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    var adding by remember { mutableStateOf(false) }
-    var draft by remember { mutableStateOf("") }
-    SectionCard(stringResource(R.string.section_self_care), modifier) {
-        items.forEach { item ->
-            androidx.compose.runtime.key(item.id) { SelfCareRow(item, onToggle, onRename, onRemove) }
-        }
-        if (adding) {
-            LineField(
-                value = draft,
-                onValueChange = { draft = it },
-                placeholder = stringResource(R.string.daily_self_care_hint),
-                trailing = {
-                    SmallIconButton(Icons.Filled.Check, stringResource(R.string.daily_confirm), {
-                        onAdd(draft)
-                        draft = ""
-                        adding = false
-                    })
-                    SmallIconButton(Icons.Filled.Close, stringResource(R.string.action_cancel), {
-                        draft = ""
-                        adding = false
-                    })
-                },
-            )
-        } else {
-            AddRowButton(stringResource(R.string.daily_add_item), { adding = true })
-        }
-    }
-}
-
-@Composable
-private fun SelfCareRow(
-    item: SelfCareUi,
-    onToggle: (Long) -> Unit,
-    onRename: (Long, String) -> Unit,
-    onRemove: (Long) -> Unit,
-) {
-    var editing by remember { mutableStateOf(false) }
-    var draft by remember { mutableStateOf(item.name) }
-    if (editing) {
-        LineField(
-            value = draft,
-            onValueChange = { draft = it },
-            placeholder = stringResource(R.string.daily_self_care_hint),
-            trailing = {
-                SmallIconButton(Icons.Filled.Check, stringResource(R.string.daily_confirm), {
-                    onRename(item.id, draft)
-                    editing = false
-                })
-            },
-        )
-    } else {
-        val style = checklistTextStyle(MaterialTheme.typography.bodyLarge)
-        FirstLineRow(
-            style,
-            leading = { CircleCheck(item.checked, { onToggle(item.id) }) },
-            trailing = {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (item.streak > 0) StreakBadge(item.streak)
-                    SmallIconButton(Icons.Filled.Edit, stringResource(R.string.daily_rename), {
-                        draft = item.name
-                        editing = true
-                    })
-                    SmallIconButton(Icons.Filled.Delete, stringResource(R.string.daily_remove), { onRemove(item.id) })
-                }
-            },
-        ) { pos ->
-            Text(item.name, style = style, modifier = Modifier.weight(1f).then(pos))
-        }
-    }
-}
-
-@Composable
-private fun StreakBadge(streak: Int) {
-    val colors = AppColors.current
-    val description = stringResource(R.string.daily_streak_description, streak)
-    Surface(
-        color = colors.sage,
-        contentColor = colors.onSage,
-        shape = CircleShape,
-        modifier = Modifier
-            .padding(horizontal = 4.dp)
-            .semantics { contentDescription = description },
-    ) {
-        Text(
-            stringResource(R.string.daily_streak_badge, streak),
-            style = MaterialTheme.typography.labelMedium,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-        )
     }
 }
 

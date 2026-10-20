@@ -17,9 +17,6 @@ data class MonthDayUi(
 /** A dated line of the events list; [key] is a stable local identity for the row. */
 data class EventUi(val key: Long, val epochDay: Long, val text: String = "")
 
-/** Habit total for the month; [denominator] is null for a future month (shown as "-"). */
-data class MonthHabitUi(val id: Long, val name: String, val done: Int, val denominator: Int?)
-
 /** Everything the monthly page shows. Plain data so screenshot tests can build it without a database. */
 data class MonthUiState(
     val month: YearMonth,
@@ -28,7 +25,6 @@ data class MonthUiState(
     val goals: List<TaskUi> = emptyList(),
     val events: List<EventUi> = emptyList(),
     val todo: List<TaskUi> = emptyList(),
-    val habits: List<MonthHabitUi> = emptyList(),
     val notes: String = "",
     val review: String = "",
     /** False until the ViewModel finished its initial load; editing is disabled meanwhile. */

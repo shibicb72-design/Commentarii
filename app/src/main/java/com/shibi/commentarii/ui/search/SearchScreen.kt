@@ -38,6 +38,7 @@ import com.shibi.commentarii.AppContainer
 import com.shibi.commentarii.R
 import com.shibi.commentarii.data.PageType
 import com.shibi.commentarii.ui.theme.AppColors
+import com.shibi.commentarii.ui.theme.ThemedPage
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -63,11 +64,7 @@ fun SearchContent(
     onOpenPage: (type: String, id: Long, date: LocalDate?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Surface(
-        modifier = modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background,
-        contentColor = MaterialTheme.colorScheme.onBackground,
-    ) {
+    ThemedPage(modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
             OutlinedTextField(
                 value = state.query,

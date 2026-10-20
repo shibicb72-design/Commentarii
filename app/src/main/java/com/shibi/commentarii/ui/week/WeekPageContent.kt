@@ -7,8 +7,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -24,6 +22,7 @@ import com.shibi.commentarii.ui.common.ReviewCard
 import com.shibi.commentarii.ui.daily.DontForgetCard
 import com.shibi.commentarii.ui.daily.NotesCard
 import com.shibi.commentarii.ui.daily.TodoCard
+import com.shibi.commentarii.ui.theme.ThemedPage
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -40,11 +39,7 @@ fun WeekPageContent(
 ) {
     val twoColumns = windowWidthClass != WindowWidthSizeClass.Compact
     val days = remember(state.monday) { weekDays(state.monday) }
-    Surface(
-        modifier = modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background,
-        contentColor = MaterialTheme.colorScheme.onBackground,
-    ) {
+    ThemedPage(modifier.fillMaxSize()) {
         LazyColumn(
             Modifier.fillMaxSize(),
             contentPadding = PaddingValues(16.dp),
@@ -58,7 +53,6 @@ fun WeekPageContent(
                             GoalsCard(state.goals, actions.goals, maxItems = WeekViewModel.GOAL_SLOTS, enabled = state.loaded)
                             TodoCard(state.todo, actions.todo, enabled = state.loaded)
                             DontForgetCard(state.dontForget, actions.dontForget, enabled = state.loaded)
-                            WeekHabitCard(days, state.habits, actions.onToggleHabit, enabled = state.loaded)
                             WeekMoodCard(days, state.moods, actions.onOpenDay)
                         }
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -74,7 +68,6 @@ fun WeekPageContent(
                 item { WeekDaysCard(state.days, state.today, actions.onOpenDay) }
                 item { TodoCard(state.todo, actions.todo, enabled = state.loaded) }
                 item { DontForgetCard(state.dontForget, actions.dontForget, enabled = state.loaded) }
-                item { WeekHabitCard(days, state.habits, actions.onToggleHabit, enabled = state.loaded) }
                 item { WeekMoodCard(days, state.moods, actions.onOpenDay) }
                 item { NotesCard(state.notes, actions.onNotes, enabled = state.loaded) }
                 item { ReviewCard(stringResource(R.string.section_review_well), state.reviewWell, actions.onReviewWell, enabled = state.loaded) }

@@ -13,7 +13,6 @@ import com.shibi.commentarii.data.SectionKind
 import com.shibi.commentarii.data.TaskItemEntity
 import com.shibi.commentarii.data.TaskSection
 import com.shibi.commentarii.domain.monthGrid
-import com.shibi.commentarii.domain.monthSummary
 import com.shibi.commentarii.ui.common.Autosaver
 import com.shibi.commentarii.ui.common.padTasks
 import com.shibi.commentarii.ui.common.saveTaskRows
@@ -34,7 +33,6 @@ class MonthViewModel(
     val month: YearMonth,
 ) : ViewModel() {
     private val pages = container.pages
-    private val selfCare = container.selfCare
     private val today = LocalDate.now(container.clock)
     private val cells = monthGrid(month)
 
@@ -93,17 +91,6 @@ class MonthViewModel(
                 pages.observeMoods(first, last),
             ) { dates, moods -> dates.toSet() to moods }.collect { (dates, moods) ->
                 _state.update { it.copy(grid = grid(dates, moods)) }
-            }
-        }
-        viewModelScope.launch {
-            combine(
-                selfCare.observeItems(),
-                selfCare.observeChecks(month.atDay(1), month.atEndOfMonth()),
-            ) { items, checks -> items to monthSummary(items, checks, month, today) }.collect { (items, summary) ->
-                val names = items.associate { it.id to it.name }
-                _state.update { st ->
-                    st.copy(habits = summary.map { MonthHabitUi(it.itemId, names[it.itemId].orEmpty(), it.done, it.denominator) })
-                }
             }
         }
     }

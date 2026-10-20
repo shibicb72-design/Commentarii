@@ -24,7 +24,6 @@ class SettingsViewModel(
     licenseText: String,
 ) : ViewModel() {
     private val settings = container.settings
-    private val selfCare = container.selfCare
     private val message = MutableStateFlow<SettingsMessage?>(null)
     private val exactGranted = MutableStateFlow(container.alarms.canScheduleExact())
 
@@ -33,17 +32,17 @@ class SettingsViewModel(
         settings.exportReminderEnabled,
         settings.lastExportAt,
         settings.darkMode,
-        selfCare.observeItems(),
-    ) { lock, reminder, last, dark, items ->
+    ) { lock, reminder, last, dark ->
         SettingsUiState(
             lockEnabled = lock,
             exportReminderEnabled = reminder,
             lastExportAt = last,
             darkMode = dark,
-            selfCare = items.map { SelfCareEditUi(it.id, it.name) },
             licenseText = licenseText,
         )
     }
+
+    private val theme = combine(settings.themeId, settings.staticThemeIds, ::Pair)
 
     private val batteryUnrestricted = MutableStateFlow(true)
 
@@ -51,8 +50,11 @@ class SettingsViewModel(
         Triple(e, b, n)
     }
 
-    val state: StateFlow<SettingsUiState> = combine(base, message, status) { s, m, (e, b, n) ->
-        s.copy(message = m, exactAlarmGranted = e, batteryUnrestricted = b, notificationsBlocked = n)
+    val state: StateFlow<SettingsUiState> = combine(base, message, status, theme) { s, m, (e, b, n), (themeId, staticIds) ->
+        s.copy(
+            message = m, exactAlarmGranted = e, batteryUnrestricted = b, notificationsBlocked = n,
+            themeId = themeId, staticThemeIds = staticIds,
+        )
     }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SettingsUiState(licenseText = licenseText))
 
@@ -95,14 +97,8 @@ class SettingsViewModel(
         onExport = onExport,
         onImport = onImport,
         onDarkMode = { m: DarkMode -> viewModelScope.launch { settings.setDarkMode(m) } },
-        onAddSelfCare = { name -> if (name.isNotBlank()) viewModelScope.launch { selfCare.addItem(name) } },
-        onRenameSelfCare = { id, name -> if (name.isNotBlank()) viewModelScope.launch { selfCare.renameItem(id, name) } },
-        onRemoveSelfCare = { id -> viewModelScope.launch { selfCare.removeItem(id) } },
-        onMoveSelfCare = { id, delta ->
-            val ids = state.value.selfCare.map { it.id }
-            val moved = movedIds(ids, id, delta)
-            if (moved != ids) viewModelScope.launch { selfCare.reorder(moved) }
-        },
+        onThemeSelect = { id -> viewModelScope.launch { settings.setThemeId(id) } },
+        onThemeAnimated = { id, on -> viewModelScope.launch { settings.setThemeAnimated(id, on) } },
     )
 
     fun exportTo(uri: Uri, resolver: ContentResolver) {

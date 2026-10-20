@@ -7,8 +7,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -21,13 +19,14 @@ import com.shibi.commentarii.ui.common.PeriodHeader
 import com.shibi.commentarii.ui.common.ReviewCard
 import com.shibi.commentarii.ui.daily.NotesCard
 import com.shibi.commentarii.ui.daily.TodoCard
+import com.shibi.commentarii.ui.theme.ThemedPage
 import java.time.YearMonth
 import java.time.format.TextStyle
 import java.util.Locale
 
 /**
  * Stateless monthly page. Compact width: one scrolling column of all sections.
- * Medium/Expanded: two columns (left: calendar and habits, right: goals, events, to-dos, notes and review).
+ * Medium/Expanded: two columns (left: calendar and review, right: goals, events, to-dos, notes and review).
  */
 @Composable
 fun MonthPageContent(
@@ -37,11 +36,7 @@ fun MonthPageContent(
     modifier: Modifier = Modifier,
 ) {
     val twoColumns = windowWidthClass != WindowWidthSizeClass.Compact
-    Surface(
-        modifier = modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background,
-        contentColor = MaterialTheme.colorScheme.onBackground,
-    ) {
+    ThemedPage(modifier.fillMaxSize()) {
         LazyColumn(
             Modifier.fillMaxSize(),
             contentPadding = PaddingValues(16.dp),
@@ -53,7 +48,6 @@ fun MonthPageContent(
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                             MonthCalendarCard(state.grid, state.today, actions.onOpenDay)
-                            HabitSummaryCard(state.habits)
                             ReviewCard(stringResource(R.string.section_review), state.review, actions.onReview, enabled = state.loaded)
                         }
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -69,7 +63,6 @@ fun MonthPageContent(
                 item { GoalsCard(state.goals, actions.goals, maxItems = null, enabled = state.loaded) }
                 item { EventsSection(state, actions) }
                 item { TodoCard(state.todo, actions.todo, enabled = state.loaded) }
-                item { HabitSummaryCard(state.habits) }
                 item { NotesCard(state.notes, actions.onNotes, enabled = state.loaded) }
                 item { ReviewCard(stringResource(R.string.section_review), state.review, actions.onReview, enabled = state.loaded) }
             }

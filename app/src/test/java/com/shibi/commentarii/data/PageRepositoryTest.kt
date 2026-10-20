@@ -141,11 +141,10 @@ class PageRepositoryTest {
     }
 
     @Test
-    fun hasUserDataTrueForSelfCareCheck() = runBlocking {
-        val care = SelfCareRepository(db)
-        val item = care.addItem("Walk")
+    fun hasUserDataTrueForLegacySelfCareCheck() = runBlocking {
+        val id = db.selfCareDao().insertItem(SelfCareItemEntity(name = "Walk", position = 0))
         assertFalse(repo.hasUserData())
-        care.toggleCheck(item.id, day)
+        db.selfCareDao().insertCheck(SelfCareCheckEntity(id, day))
         assertTrue(repo.hasUserData())
     }
 

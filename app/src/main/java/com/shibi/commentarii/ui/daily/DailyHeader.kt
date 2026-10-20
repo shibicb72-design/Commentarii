@@ -52,6 +52,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.shibi.commentarii.R
 import com.shibi.commentarii.ui.common.DatePickerDialogFor
+import com.shibi.commentarii.ui.theme.ThemedTitle
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -66,7 +67,7 @@ fun DailyHeader(state: DailyUiState, actions: DailyActions, modifier: Modifier =
     }
     Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(title, style = MaterialTheme.typography.displaySmall, modifier = Modifier.weight(1f))
+            ThemedTitle(title, MaterialTheme.typography.displaySmall, Modifier.weight(1f))
             IconButton(onClick = { showDatePicker = true }) {
                 Icon(Icons.Filled.CalendarMonth, contentDescription = stringResource(R.string.daily_pick_date))
             }

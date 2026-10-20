@@ -178,23 +178,3 @@ fun EventsCard(
         AddRowButton(stringResource(R.string.event_add), onAdd, enabled = enabled)
     }
 }
-
-/** Per-habit total for the month, e.g. "22/30"; "-" for a month that has not started. */
-@Composable
-fun HabitSummaryCard(habits: List<MonthHabitUi>, modifier: Modifier = Modifier) {
-    SectionCard(stringResource(R.string.section_self_care), modifier) {
-        if (habits.isEmpty()) {
-            Text(stringResource(R.string.habit_summary_empty), style = MaterialTheme.typography.bodyMedium)
-        }
-        habits.forEach { habit ->
-            Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(habit.name, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-                Text(
-                    habit.denominator?.let { stringResource(R.string.habit_summary_fmt, habit.done, it) }
-                        ?: stringResource(R.string.habit_summary_none),
-                    style = MaterialTheme.typography.titleMedium,
-                )
-            }
-        }
-    }
-}

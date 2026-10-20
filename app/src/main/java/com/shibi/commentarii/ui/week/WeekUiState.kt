@@ -13,9 +13,6 @@ data class WeekDayUi(
     val todoTotal: Int = 0,
 )
 
-/** A habit with one flag per day of the week (Monday first). */
-data class WeekHabitUi(val id: Long, val name: String, val checks: List<Boolean>)
-
 /** Everything the weekly page shows. Plain data so screenshot tests can build it without a database. */
 data class WeekUiState(
     val monday: LocalDate,
@@ -24,7 +21,6 @@ data class WeekUiState(
     val todo: List<TaskUi> = emptyList(),
     val dontForget: List<TaskUi> = emptyList(),
     val days: List<WeekDayUi> = emptyList(),
-    val habits: List<WeekHabitUi> = emptyList(),
     /** One entry per day (1..5 or null when not chosen). */
     val moods: List<Int?> = emptyList(),
     val notes: String = "",
@@ -53,7 +49,6 @@ data class WeekActions(
     val goals: TaskListActions = TaskListActions(),
     val todo: TaskListActions = TaskListActions(),
     val dontForget: TaskListActions = TaskListActions(),
-    val onToggleHabit: (itemId: Long, date: LocalDate) -> Unit = { _, _ -> },
     val onNotes: (String) -> Unit = {},
     val onReviewWell: (String) -> Unit = {},
     val onReviewImprove: (String) -> Unit = {},

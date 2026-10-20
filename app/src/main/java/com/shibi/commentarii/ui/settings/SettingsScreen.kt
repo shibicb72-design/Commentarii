@@ -14,8 +14,22 @@ import com.shibi.commentarii.ui.lock.SecuritySettings
 import com.shibi.commentarii.ui.lock.requestLockChange
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import com.shibi.commentarii.ui.theme.AppTheme
+import com.shibi.commentarii.ui.theme.AppThemes
+import com.shibi.commentarii.ui.theme.systemAnimationsEnabled
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,16 +38,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -59,9 +67,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.shibi.commentarii.AppContainer
 import com.shibi.commentarii.R
 import com.shibi.commentarii.data.DarkMode
-import com.shibi.commentarii.ui.daily.AddRowButton
 import com.shibi.commentarii.ui.daily.SectionCard
-import com.shibi.commentarii.ui.daily.SmallIconButton
 
 private const val LICENSE_ASSET = "licenses/DancingScript-OFL.txt"
 
@@ -298,9 +304,22 @@ fun SettingsContent(state: SettingsUiState, callbacks: SettingsCallbacks, modifi
                         Text(stringResource(modeLabel(mode)))
                     }
                 }
-            }
-            SectionCard(stringResource(R.string.section_self_care)) {
-                SelfCareEditor(state.selfCare, callbacks)
+                HorizontalDivider(Modifier.padding(vertical = 4.dp))
+                val dark = when (state.darkMode) {
+                    DarkMode.DARK -> true
+                    DarkMode.LIGHT -> false
+                    DarkMode.SYSTEM -> isSystemInDarkTheme()
+                }
+                AppThemes.all.forEach { theme ->
+                    ThemeRow(
+                        theme = theme,
+                        dark = dark,
+                        selected = state.themeId == theme.id,
+                        animatedOn = theme.id !in state.staticThemeIds,
+                        onSelect = { callbacks.onThemeSelect(theme.id) },
+                        onAnimated = { on -> callbacks.onThemeAnimated(theme.id, on) },
+                    )
+                }
             }
             SectionCard(stringResource(R.string.settings_debugging)) {
                 OutlinedButton(
@@ -330,6 +349,78 @@ private fun modeLabel(m: DarkMode): Int = when (m) {
     DarkMode.DARK -> R.string.settings_theme_dark
 }
 
+/** One picker entry; animated themes also get their own Animated/Off choice (no global switch). */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ThemeRow(
+    theme: AppTheme,
+    dark: Boolean,
+    selected: Boolean,
+    animatedOn: Boolean,
+    onSelect: () -> Unit,
+    onAnimated: (Boolean) -> Unit,
+) {
+    Column(Modifier.fillMaxWidth()) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .selectable(selected = selected, role = Role.RadioButton, onClick = onSelect),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            RadioButton(selected = selected, onClick = null, modifier = Modifier.padding(12.dp))
+            ThemeSwatch(theme, dark)
+            Column(Modifier.weight(1f).padding(start = 12.dp, top = 6.dp, bottom = 6.dp)) {
+                Text(stringResource(theme.nameRes), style = MaterialTheme.typography.bodyLarge)
+                Text(stringResource(theme.descriptionRes), style = MaterialTheme.typography.bodySmall)
+            }
+        }
+        if (theme.animated) {
+            SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(start = 48.dp, bottom = 4.dp)) {
+                SegmentedButton(
+                    selected = animatedOn,
+                    onClick = { onAnimated(true) },
+                    shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
+                ) { Text(stringResource(R.string.settings_theme_animated)) }
+                SegmentedButton(
+                    selected = !animatedOn,
+                    onClick = { onAnimated(false) },
+                    shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
+                ) { Text(stringResource(R.string.settings_theme_static)) }
+            }
+            if (!systemAnimationsEnabled()) {
+                Text(
+                    stringResource(R.string.settings_theme_system_anim_off),
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(start = 48.dp, bottom = 4.dp),
+                )
+            }
+        }
+    }
+}
+
+/** 24dp background circle with three overlapping 12dp tab-colour dots. */
+@Composable
+private fun ThemeSwatch(theme: AppTheme, dark: Boolean) {
+    val mode = if (dark) theme.dark else theme.light
+    val tabs = mode.extras.tabs
+    val outline = MaterialTheme.colorScheme.outline
+    Box(
+        Modifier
+            .size(24.dp)
+            .background(mode.scheme.background, CircleShape)
+            .border(1.dp, outline, CircleShape),
+    ) {
+        repeat(3) { i ->
+            Box(
+                Modifier
+                    .offset(x = (i * 5).dp, y = (6).dp)
+                    .size(12.dp)
+                    .background(tabs[i % tabs.size], CircleShape),
+            )
+        }
+    }
+}
+
 @Composable
 private fun SwitchRow(title: String, hint: String, checked: Boolean, onChange: (Boolean) -> Unit) {
     Row(
@@ -344,82 +435,6 @@ private fun SwitchRow(title: String, hint: String, checked: Boolean, onChange: (
         }
         Switch(checked = checked, onCheckedChange = onChange)
     }
-}
-
-@Composable
-private fun SelfCareEditor(items: List<SelfCareEditUi>, callbacks: SettingsCallbacks) {
-    var renaming by remember { mutableStateOf<SelfCareEditUi?>(null) }
-    var adding by rememberSaveable { mutableStateOf(false) }
-    items.forEachIndexed { i, item ->
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text(item.name, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
-            SmallIconButton(
-                Icons.Filled.KeyboardArrowUp,
-                stringResource(R.string.daily_move_up),
-                { callbacks.onMoveSelfCare(item.id, -1) },
-                enabled = i > 0,
-            )
-            SmallIconButton(
-                Icons.Filled.KeyboardArrowDown,
-                stringResource(R.string.daily_move_down),
-                { callbacks.onMoveSelfCare(item.id, 1) },
-                enabled = i < items.lastIndex,
-            )
-            SmallIconButton(Icons.Filled.Edit, stringResource(R.string.daily_rename), { renaming = item })
-            SmallIconButton(
-                Icons.Filled.Delete,
-                stringResource(R.string.daily_remove),
-                { callbacks.onRemoveSelfCare(item.id) },
-            )
-        }
-    }
-    AddRowButton(stringResource(R.string.settings_add_self_care), { adding = true })
-
-    renaming?.let { item ->
-        NameDialog(
-            title = stringResource(R.string.daily_rename),
-            initial = item.name,
-            onConfirm = {
-                callbacks.onRenameSelfCare(item.id, it)
-                renaming = null
-            },
-            onDismiss = { renaming = null },
-        )
-    }
-    if (adding) {
-        NameDialog(
-            title = stringResource(R.string.settings_add_self_care),
-            initial = "",
-            onConfirm = {
-                callbacks.onAddSelfCare(it)
-                adding = false
-            },
-            onDismiss = { adding = false },
-        )
-    }
-}
-
-@Composable
-private fun NameDialog(title: String, initial: String, onConfirm: (String) -> Unit, onDismiss: () -> Unit) {
-    var text by remember { mutableStateOf(initial) }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(title) },
-        text = {
-            OutlinedTextField(
-                value = text,
-                onValueChange = { text = it },
-                singleLine = true,
-                label = { Text(stringResource(R.string.daily_name_hint)) },
-            )
-        },
-        confirmButton = {
-            TextButton(onClick = { onConfirm(text) }, enabled = text.isNotBlank()) {
-                Text(stringResource(R.string.action_ok))
-            }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
-    )
 }
 
 @Composable

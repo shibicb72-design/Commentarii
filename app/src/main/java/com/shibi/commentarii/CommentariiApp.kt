@@ -14,7 +14,6 @@ import androidx.lifecycle.ProcessLifecycleOwner
 import com.shibi.commentarii.backup.ExportImport
 import com.shibi.commentarii.data.CommentariiDatabase
 import com.shibi.commentarii.data.PageRepository
-import com.shibi.commentarii.data.SelfCareRepository
 import com.shibi.commentarii.data.SettingsRepository
 import com.shibi.commentarii.debug.DebugLog
 import com.shibi.commentarii.notify.AlarmScheduler
@@ -44,7 +43,6 @@ class AppContainer(context: Context) {
     val db: CommentariiDatabase = CommentariiDatabase.build(context)
     val alarms = AlarmScheduler(appContext, clock, debugLog)
     val pages = PageRepository(db, clock, zone, alarms)
-    val selfCare = SelfCareRepository(db)
     val settings = SettingsRepository(context.applicationContext.settingsDataStore)
     val exportImport = ExportImport(db, settings, pages)
     val lock = AppLock()
