@@ -28,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.shibi.commentarii.R
+import com.shibi.commentarii.ui.theme.ThemedTitle
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -75,7 +76,7 @@ fun PeriodHeader(
             Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = previousDescription)
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(title, style = MaterialTheme.typography.displaySmall)
+            ThemedTitle(title, MaterialTheme.typography.displaySmall)
             if (subtitle != null) Text(subtitle, style = MaterialTheme.typography.labelLarge)
         }
         IconButton(onClick = { showDatePicker = true }) {

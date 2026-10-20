@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.BasicTextField
@@ -27,10 +28,20 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
@@ -40,6 +51,15 @@ import com.shibi.commentarii.ui.components.FirstLineRow
 import com.shibi.commentarii.ui.components.checklistTextStyle
 import com.shibi.commentarii.ui.components.firstLineTopPadding
 import com.shibi.commentarii.ui.theme.AppColors
+import com.shibi.commentarii.ui.theme.HeaderStyle
+import com.shibi.commentarii.ui.theme.LabelStyle
+import com.shibi.commentarii.ui.theme.LocalAppTheme
+import com.shibi.commentarii.ui.theme.ThemedCheckGlyph
+import com.shibi.commentarii.ui.theme.ThemedSectionLabel
+import com.shibi.commentarii.ui.theme.cardDecor
+import com.shibi.commentarii.ui.theme.currentArt
+import com.shibi.commentarii.ui.theme.themedCard
+import kotlin.math.abs
 
 /**
  * Underlined field that wraps long text over several lines (leading/trailing stay on the first line). Newlines are
@@ -98,6 +118,7 @@ fun LineField(
 fun CircleCheck(checked: Boolean, onToggle: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
     val primary = MaterialTheme.colorScheme.primary
     val ring = if (checked) primary else LocalContentColor.current.copy(alpha = 0.7f)
+    val art = currentArt()
     Box(
         modifier
             .size(40.dp)
@@ -105,7 +126,9 @@ fun CircleCheck(checked: Boolean, onToggle: () -> Unit, modifier: Modifier = Mod
             .toggleable(value = checked, enabled = enabled, role = Role.Checkbox, onValueChange = { onToggle() }),
         contentAlignment = Alignment.Center,
     ) {
-        Box(
+        if (art != null) {
+            ThemedCheckGlyph(checked)
+        } else Box(
             Modifier
                 .size(22.dp)
                 .clip(CircleShape)
@@ -146,28 +169,105 @@ fun AddRowButton(label: String, onClick: () -> Unit, modifier: Modifier = Modifi
     }
 }
 
+/** Right-end triangular notch of [notchPx], used by the RIBBON header style. */
+private fun notchedShape(notchPx: Float) = GenericShape { size, _ ->
+    moveTo(0f, 0f)
+    lineTo(size.width, 0f)
+    lineTo(size.width - notchPx, size.height / 2f)
+    lineTo(size.width, size.height)
+    lineTo(0f, size.height)
+    close()
+}
+
+/** Per-theme tab styling drawn behind the title; never changes the tab's size. PLAIN draws nothing. */
+private fun Modifier.headerDecor(style: HeaderStyle, tabColor: Color, onTab: Color): Modifier = when (style) {
+    HeaderStyle.WASHI -> drawBehind {
+        val step = 8.dp.toPx()
+        val stripe = onTab.copy(alpha = 0.12f)
+        clipRect {
+            var x = -size.height
+            while (x < size.width) {
+                drawLine(stripe, Offset(x, size.height), Offset(x + size.height, 0f), strokeWidth = 2.dp.toPx())
+                x += step
+            }
+        }
+        val tooth = 3.dp.toPx()
+        val pitch = 4.dp.toPx()
+        for (edgeX in floatArrayOf(0f, size.width)) {
+            val dir = if (edgeX == 0f) 1f else -1f
+            val zig = Path().apply {
+                moveTo(edgeX, 0f)
+                var y = 0f
+                var out = true
+                while (y < size.height) {
+                    y = minOf(y + pitch, size.height)
+                    lineTo(edgeX + if (out) dir * tooth else 0f, y)
+                    out = !out
+                }
+            }
+            drawPath(zig, stripe, style = Stroke(width = 2.dp.toPx()))
+        }
+    }
+    HeaderStyle.HIGHLIGHTER -> drawBehind {
+        val inset = 2.dp.toPx()
+        val skew = size.height * 0.07f // about 4 degrees
+        val swash = Path().apply {
+            moveTo(inset + skew, inset)
+            lineTo(size.width - inset, inset)
+            lineTo(size.width - inset - skew, size.height - inset)
+            lineTo(inset, size.height - inset)
+            close()
+        }
+        drawPath(swash, tabColor.copy(alpha = 0.85f))
+        drawPath(swash, tabColor.copy(alpha = 0.85f), style = Stroke(width = 4.dp.toPx(), join = StrokeJoin.Round))
+    }
+    else -> this
+}
+
+private fun artCardRadius(style: LabelStyle) = when (style) {
+    LabelStyle.PILL -> 18.dp
+    LabelStyle.SWASH -> 16.dp
+    LabelStyle.STAMP -> 14.dp
+    LabelStyle.ROSE -> 16.dp
+}
+
 /** Rounded card with a pink label tab. Content colour comes from the card container. */
 @Composable
 fun SectionCard(title: String, modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     val colors = AppColors.current
+    val theme = LocalAppTheme.current
+    val tabColor = colors.tabs[abs(title.hashCode()) % colors.tabs.size]
+    val notchPx = with(LocalDensity.current) { 6.dp.toPx() }
+    val tabShape = if (theme.headerStyle == HeaderStyle.RIBBON) notchedShape(notchPx) else theme.tabShape
+    val highlighter = theme.headerStyle == HeaderStyle.HIGHLIGHTER
+    val art = currentArt()
+    val decor = art?.let { (a, c) -> remember(theme.id, title, c) { cardDecor(theme.id, a, c, title) } }
+    val cardShape = if (art != null) RoundedCornerShape(artCardRadius(art.first.labelStyle)) else theme.cardShape
     Column(modifier.fillMaxWidth()) {
-        Surface(
-            color = colors.tab,
+        if (art != null) {
+            ThemedSectionLabel(title, tabColor)
+        } else Surface(
+            color = if (highlighter) Color.Transparent else tabColor,
             contentColor = colors.onTab,
-            shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+            shape = tabShape,
         ) {
             Text(
                 title,
                 style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                modifier = Modifier
+                    .headerDecor(theme.headerStyle, tabColor, colors.onTab)
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
             )
         }
         Surface(
             color = colors.card,
             contentColor = colors.onCard,
-            shape = RoundedCornerShape(topStart = 0.dp, topEnd = 16.dp, bottomStart = 16.dp, bottomEnd = 16.dp),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-            modifier = Modifier.fillMaxWidth(),
+            shape = cardShape,
+            border = if (art != null) {
+                val edge = art.second.cardEdge ?: lerp(tabColor, art.second.ink, 0.18f)
+                BorderStroke(1.5.dp, edge)
+            } else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            modifier = if (decor != null) Modifier.fillMaxWidth().themedCard(decor, cardShape) else Modifier.fillMaxWidth(),
         ) {
             Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), content = content)
         }

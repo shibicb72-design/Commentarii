@@ -14,8 +14,22 @@ import com.shibi.commentarii.ui.lock.SecuritySettings
 import com.shibi.commentarii.ui.lock.requestLockChange
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import com.shibi.commentarii.ui.theme.AppTheme
+import com.shibi.commentarii.ui.theme.AppThemes
+import com.shibi.commentarii.ui.theme.systemAnimationsEnabled
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -290,6 +304,22 @@ fun SettingsContent(state: SettingsUiState, callbacks: SettingsCallbacks, modifi
                         Text(stringResource(modeLabel(mode)))
                     }
                 }
+                HorizontalDivider(Modifier.padding(vertical = 4.dp))
+                val dark = when (state.darkMode) {
+                    DarkMode.DARK -> true
+                    DarkMode.LIGHT -> false
+                    DarkMode.SYSTEM -> isSystemInDarkTheme()
+                }
+                AppThemes.all.forEach { theme ->
+                    ThemeRow(
+                        theme = theme,
+                        dark = dark,
+                        selected = state.themeId == theme.id,
+                        animatedOn = theme.id !in state.staticThemeIds,
+                        onSelect = { callbacks.onThemeSelect(theme.id) },
+                        onAnimated = { on -> callbacks.onThemeAnimated(theme.id, on) },
+                    )
+                }
             }
             SectionCard(stringResource(R.string.settings_debugging)) {
                 OutlinedButton(
@@ -317,6 +347,78 @@ private fun modeLabel(m: DarkMode): Int = when (m) {
     DarkMode.SYSTEM -> R.string.settings_theme_system
     DarkMode.LIGHT -> R.string.settings_theme_light
     DarkMode.DARK -> R.string.settings_theme_dark
+}
+
+/** One picker entry; animated themes also get their own Animated/Off choice (no global switch). */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ThemeRow(
+    theme: AppTheme,
+    dark: Boolean,
+    selected: Boolean,
+    animatedOn: Boolean,
+    onSelect: () -> Unit,
+    onAnimated: (Boolean) -> Unit,
+) {
+    Column(Modifier.fillMaxWidth()) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .selectable(selected = selected, role = Role.RadioButton, onClick = onSelect),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            RadioButton(selected = selected, onClick = null, modifier = Modifier.padding(12.dp))
+            ThemeSwatch(theme, dark)
+            Column(Modifier.weight(1f).padding(start = 12.dp, top = 6.dp, bottom = 6.dp)) {
+                Text(stringResource(theme.nameRes), style = MaterialTheme.typography.bodyLarge)
+                Text(stringResource(theme.descriptionRes), style = MaterialTheme.typography.bodySmall)
+            }
+        }
+        if (theme.animated) {
+            SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(start = 48.dp, bottom = 4.dp)) {
+                SegmentedButton(
+                    selected = animatedOn,
+                    onClick = { onAnimated(true) },
+                    shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
+                ) { Text(stringResource(R.string.settings_theme_animated)) }
+                SegmentedButton(
+                    selected = !animatedOn,
+                    onClick = { onAnimated(false) },
+                    shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
+                ) { Text(stringResource(R.string.settings_theme_static)) }
+            }
+            if (!systemAnimationsEnabled()) {
+                Text(
+                    stringResource(R.string.settings_theme_system_anim_off),
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(start = 48.dp, bottom = 4.dp),
+                )
+            }
+        }
+    }
+}
+
+/** 24dp background circle with three overlapping 12dp tab-colour dots. */
+@Composable
+private fun ThemeSwatch(theme: AppTheme, dark: Boolean) {
+    val mode = if (dark) theme.dark else theme.light
+    val tabs = mode.extras.tabs
+    val outline = MaterialTheme.colorScheme.outline
+    Box(
+        Modifier
+            .size(24.dp)
+            .background(mode.scheme.background, CircleShape)
+            .border(1.dp, outline, CircleShape),
+    ) {
+        repeat(3) { i ->
+            Box(
+                Modifier
+                    .offset(x = (i * 5).dp, y = (6).dp)
+                    .size(12.dp)
+                    .background(tabs[i % tabs.size], CircleShape),
+            )
+        }
+    }
 }
 
 @Composable

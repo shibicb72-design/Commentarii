@@ -7,8 +7,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -21,6 +19,7 @@ import com.shibi.commentarii.ui.common.PeriodHeader
 import com.shibi.commentarii.ui.common.ReviewCard
 import com.shibi.commentarii.ui.daily.NotesCard
 import com.shibi.commentarii.ui.daily.TodoCard
+import com.shibi.commentarii.ui.theme.ThemedPage
 import java.time.YearMonth
 import java.time.format.TextStyle
 import java.util.Locale
@@ -37,11 +36,7 @@ fun MonthPageContent(
     modifier: Modifier = Modifier,
 ) {
     val twoColumns = windowWidthClass != WindowWidthSizeClass.Compact
-    Surface(
-        modifier = modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background,
-        contentColor = MaterialTheme.colorScheme.onBackground,
-    ) {
+    ThemedPage(modifier.fillMaxSize()) {
         LazyColumn(
             Modifier.fillMaxSize(),
             contentPadding = PaddingValues(16.dp),

@@ -37,6 +37,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.shibi.commentarii.AppContainer
 import com.shibi.commentarii.R
 import com.shibi.commentarii.ui.theme.AppColors
+import com.shibi.commentarii.ui.theme.ThemedPage
 
 /** Notes list wired to [NotesViewModel]. [onNewNote] receives the id of the freshly created note. */
 @Composable
@@ -63,11 +64,7 @@ fun NotesListScreen(
 @Composable
 fun NotesListContent(state: NotesUiState, actions: NotesActions, modifier: Modifier = Modifier) {
     val colors = AppColors.current
-    Surface(
-        modifier = modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background,
-        contentColor = MaterialTheme.colorScheme.onBackground,
-    ) {
+    ThemedPage(modifier.fillMaxSize()) {
         Box(Modifier.fillMaxSize()) {
             Column(Modifier.fillMaxSize()) {
                 Text(

@@ -42,14 +42,19 @@ class SettingsViewModel(
         )
     }
 
+    private val theme = combine(settings.themeId, settings.staticThemeIds, ::Pair)
+
     private val batteryUnrestricted = MutableStateFlow(true)
 
     private val status = combine(exactGranted, batteryUnrestricted, container.notificationsBlocked) { e, b, n ->
         Triple(e, b, n)
     }
 
-    val state: StateFlow<SettingsUiState> = combine(base, message, status) { s, m, (e, b, n) ->
-        s.copy(message = m, exactAlarmGranted = e, batteryUnrestricted = b, notificationsBlocked = n)
+    val state: StateFlow<SettingsUiState> = combine(base, message, status, theme) { s, m, (e, b, n), (themeId, staticIds) ->
+        s.copy(
+            message = m, exactAlarmGranted = e, batteryUnrestricted = b, notificationsBlocked = n,
+            themeId = themeId, staticThemeIds = staticIds,
+        )
     }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SettingsUiState(licenseText = licenseText))
 
@@ -92,6 +97,8 @@ class SettingsViewModel(
         onExport = onExport,
         onImport = onImport,
         onDarkMode = { m: DarkMode -> viewModelScope.launch { settings.setDarkMode(m) } },
+        onThemeSelect = { id -> viewModelScope.launch { settings.setThemeId(id) } },
+        onThemeAnimated = { id, on -> viewModelScope.launch { settings.setThemeAnimated(id, on) } },
     )
 
     fun exportTo(uri: Uri, resolver: ContentResolver) {
