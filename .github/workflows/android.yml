@@ -77,6 +77,28 @@ jobs:
             done
           } | tee -a "$GITHUB_STEP_SUMMARY"
 
+      # Signed only when the upload-key secrets exist (not on fork PRs); unsigned otherwise.
+      - name: Build release bundle
+        env:
+          UPLOAD_KEYSTORE_BASE64: ${{ secrets.COMMENTARII_UPLOAD_KEYSTORE_BASE64 }}
+          ORG_GRADLE_PROJECT_COMMENTARII_UPLOAD_KEY_ALIAS: ${{ secrets.COMMENTARII_UPLOAD_KEY_ALIAS }}
+          ORG_GRADLE_PROJECT_COMMENTARII_UPLOAD_STORE_PASSWORD: ${{ secrets.COMMENTARII_UPLOAD_STORE_PASSWORD }}
+          ORG_GRADLE_PROJECT_COMMENTARII_UPLOAD_KEY_PASSWORD: ${{ secrets.COMMENTARII_UPLOAD_KEY_PASSWORD }}
+        run: |
+          if [ -n "$UPLOAD_KEYSTORE_BASE64" ]; then
+            echo "$UPLOAD_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload.jks"
+            export ORG_GRADLE_PROJECT_COMMENTARII_UPLOAD_STORE_FILE="$RUNNER_TEMP/upload.jks"
+          fi
+          ./gradlew bundleRelease --stacktrace
+          rm -f "$RUNNER_TEMP/upload.jks"
+
+      - name: Upload release bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-aab
+          path: app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+
       - name: Record screenshots
         run: ./gradlew recordRoborazziDebug --stacktrace
 
