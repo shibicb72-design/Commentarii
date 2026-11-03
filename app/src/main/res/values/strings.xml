@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Commentarii</string>
+    <string name="app_name">NoteToDo</string>
 
     <!-- Navigation -->
     <string name="tab_today">Today</string>
@@ -16,7 +16,7 @@
 
     <!-- Lock -->
     <string name="lock_unlock">Unlock</string>
-    <string name="icon_flower">Commentarii flower</string>
+    <string name="icon_flower">NoteToDo flower</string>
 
     <!-- Daily page: sections -->
     <string name="section_priorities">Today\'s Top Priorities</string>
@@ -186,7 +186,7 @@
     <string name="settings_msg_export_ok">Backup exported.</string>
     <string name="settings_msg_export_failed">Export failed.</string>
     <string name="settings_msg_import_ok">Backup imported.</string>
-    <string name="settings_msg_import_bad_format">That file is not a valid Commentarii backup.</string>
+    <string name="settings_msg_import_bad_format">That file is not a valid NoteToDo backup.</string>
     <string name="settings_msg_import_failed">Import failed. Nothing was changed.</string>
 
     <!-- Export reminder banner -->
@@ -206,10 +206,10 @@
     <string name="notif_now">Now: %1$s</string>
     <string name="notif_now_at">Now (%1$s): %2$s</string>
     <string name="notif_test_text">Test reminder</string>
-    <string name="lock_prompt_title">Unlock Commentarii</string>
+    <string name="lock_prompt_title">Unlock NoteToDo</string>
     <string name="lock_prompt_subtitle">Use your fingerprint or device lock.</string>
     <string name="lock_unavailable_title">Set up a screen lock</string>
-    <string name="lock_unavailable_explanation">No fingerprint or screen lock is set up on this device, so Commentarii cannot check who is opening it. Set one up in your device settings, then come back.</string>
+    <string name="lock_unavailable_explanation">No fingerprint or screen lock is set up on this device, so NoteToDo cannot check who is opening it. Set one up in your device settings, then come back.</string>
     <string name="lock_open_security_settings">Open security settings</string>
     <string name="lock_dialog_close">Not now</string>
     <string name="settings_exact_alarm_title">Exact reminder times</string>
@@ -223,7 +223,7 @@
     <string name="settings_battery_unrestricted">Battery: unrestricted</string>
     <string name="settings_battery_optimised">Battery: optimised - reminders may be delayed</string>
     <string name="settings_battery_button">Battery optimisation settings</string>
-    <string name="settings_battery_samsung_note">On Samsung, also open Battery > Background usage limits and remove Commentarii from \'Sleeping apps\'/\'Deep sleeping apps\'.</string>
+    <string name="settings_battery_samsung_note">On Samsung, also open Battery > Background usage limits and remove NoteToDo from \'Sleeping apps\'/\'Deep sleeping apps\'.</string>
     <string name="settings_test_reminder">Send test reminder</string>
     <string name="settings_msg_test_scheduled">Test reminder in 10 s - lock the phone to test</string>
     <string name="settings_debugging">Debugging</string>
