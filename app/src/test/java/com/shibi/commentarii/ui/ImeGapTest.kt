@@ -78,7 +78,7 @@ class ImeGapTest {
                     Scaffold(bottomBar = { AppBottomBar(Tab.NOTES) {} }) { padding ->
                         scaffoldBottomPx = with(density) { padding.calculateBottomPadding().toPx() }
                         AppScaffoldBody(padding, consumeInsets) {
-                            NoteEditorContent(sampleNoteEditorUiState(), NoteEditorActions(), Modifier.weight(1f))
+                            NoteEditorContent(sampleNoteEditorUiState(), NoteEditorActions())
                         }
                     }
                     // Test-only stand-in for the keyboard so the screenshots show where the IME is.

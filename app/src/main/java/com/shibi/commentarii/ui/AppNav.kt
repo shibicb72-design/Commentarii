@@ -1,8 +1,9 @@
 package com.shibi.commentarii.ui
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -145,20 +146,8 @@ fun AppNav(
             contentColor = MaterialTheme.colorScheme.onBackground,
             bottomBar = { if (compact) AppBottomBar(current, onTab) },
         ) { padding ->
-            AppScaffoldBody(padding) {
-                if (!compact) {
-                    NavigationRail {
-                        Tab.entries.forEach { tab ->
-                            NavigationRailItem(
-                                selected = tab == current,
-                                onClick = { onTab(tab) },
-                                icon = { Icon(tab.icon, contentDescription = null) },
-                                label = { Text(stringResource(tab.label)) },
-                            )
-                        }
-                    }
-                }
-                NavHost(nav, startDestination = Routes.DAILY, modifier = Modifier.weight(1f)) {
+            AppScaffoldBody(padding, rail = { if (!compact) AppRail(current, onTab) }) {
+                NavHost(nav, startDestination = Routes.DAILY) {
                     composable(
                         Routes.DAILY,
                         arguments = listOf(
@@ -267,17 +256,40 @@ internal fun AppBottomBar(current: Tab?, onTab: (Tab) -> Unit) {
     }
 }
 
+/** Navigation rail shown on Medium/Expanded width. */
+@Composable
+private fun AppRail(current: Tab?, onTab: (Tab) -> Unit) {
+    NavigationRail {
+        Tab.entries.forEach { tab ->
+            NavigationRailItem(
+                selected = tab == current,
+                onClick = { onTab(tab) },
+                icon = { Icon(tab.icon, contentDescription = null) },
+                label = { Text(stringResource(tab.label)) },
+            )
+        }
+    }
+}
+
 /**
- * Scaffold body: applies the Scaffold [padding] (status bar on top, bottom bar + nav bar below).
- * [consumeInsets] is a test seam for the old layout; production always uses the default.
+ * Scaffold body: applies the Scaffold [padding] (status bar on top, bottom bar + nav bar below) and
+ * marks it consumed for [content], so a screen's imePadding() only adds the part of the keyboard that
+ * the bottom bar does not already cover. Without it the editor's format toolbar floats a bar-height
+ * above the IME. The [rail] stays outside the consumed area so its own insets are unchanged.
+ * [consumeInsets] = false is the old layout, kept only for ImeGapTest; production uses the default.
  */
 @Composable
 internal fun AppScaffoldBody(
     padding: PaddingValues,
     consumeInsets: Boolean = true,
-    content: @Composable RowScope.() -> Unit,
+    rail: @Composable () -> Unit = {},
+    content: @Composable () -> Unit,
 ) {
-    Row(Modifier.padding(padding), content = content)
+    Row(Modifier.padding(padding)) {
+        rail()
+        val body = Modifier.weight(1f)
+        Box(if (consumeInsets) body.consumeWindowInsets(padding) else body) { content() }
+    }
 }
 
 private fun concreteRoute(entry: NavBackStackEntry, today: LocalDate): String? = when (val route = entry.destination.route) {
