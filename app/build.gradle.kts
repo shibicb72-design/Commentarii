@@ -10,12 +10,12 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.shibi.commentarii"
+        applicationId = "com.shibi.notetodo"
         minSdk = 29
         targetSdk = 36
-        // CI: every Actions run gets a higher number, so a newer CI APK installs over an older one.
-        versionCode = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 1
-        versionName = "1.0"
+        // Fixed; bump by hand for each Play upload.
+        versionCode = 1
+        versionName = "1.0.0"
     }
 
     // One APK per ABI, same artifact names as Theatrum CI: arm64 for the phones, x86_64 for emulators.
@@ -39,6 +39,25 @@ android {
         }
     }
 
+    // Release signing with the Play upload key, only when all four NOTETODO_UPLOAD_* Gradle
+    // properties are set and non-blank (CI secrets via ORG_GRADLE_PROJECT_*, -P, or
+    // ~/.gradle/gradle.properties; never committed). Otherwise release stays unsigned.
+    fun uploadProperty(name: String) = providers.gradleProperty(name).orNull?.takeIf { it.isNotBlank() }
+    val uploadStoreFile = uploadProperty("NOTETODO_UPLOAD_STORE_FILE")
+    val uploadKeyAlias = uploadProperty("NOTETODO_UPLOAD_KEY_ALIAS")
+    val uploadStorePassword = uploadProperty("NOTETODO_UPLOAD_STORE_PASSWORD")
+    val uploadKeyPassword = uploadProperty("NOTETODO_UPLOAD_KEY_PASSWORD")
+    if (uploadStoreFile != null && uploadKeyAlias != null &&
+        uploadStorePassword != null && uploadKeyPassword != null
+    ) {
+        signingConfigs.create("release") {
+            storeFile = file(uploadStoreFile)
+            storePassword = uploadStorePassword
+            keyAlias = uploadKeyAlias
+            keyPassword = uploadKeyPassword
+        }
+    }
+
     buildTypes {
         debug {
             signingConfig = signingConfigs.getByName("debug")
@@ -49,6 +68,8 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+            // Only present when the upload key properties are set (see above).
+            signingConfigs.findByName("release")?.let { signingConfig = it }
         }
     }
 

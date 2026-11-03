@@ -77,6 +77,30 @@ jobs:
             done
           } | tee -a "$GITHUB_STEP_SUMMARY"
 
+      # Signed only when the upload-key secrets exist (not on fork PRs); unsigned otherwise.
+      - name: Build release bundle
+        env:
+          UPLOAD_KEYSTORE_BASE64: ${{ secrets.NOTETODO_UPLOAD_KEYSTORE_BASE64 }}
+          ORG_GRADLE_PROJECT_NOTETODO_UPLOAD_KEY_ALIAS: ${{ secrets.NOTETODO_UPLOAD_KEY_ALIAS }}
+          ORG_GRADLE_PROJECT_NOTETODO_UPLOAD_STORE_PASSWORD: ${{ secrets.NOTETODO_UPLOAD_STORE_PASSWORD }}
+          ORG_GRADLE_PROJECT_NOTETODO_UPLOAD_KEY_PASSWORD: ${{ secrets.NOTETODO_UPLOAD_KEY_PASSWORD }}
+        run: |
+          # Keystore lives only in $RUNNER_TEMP (outside the workspace and the artifact) and is
+          # removed even if the build fails. Secrets reach Gradle as ORG_GRADLE_PROJECT_* env vars.
+          trap 'rm -f "$RUNNER_TEMP/upload.jks"' EXIT
+          if [ -n "$UPLOAD_KEYSTORE_BASE64" ]; then
+            printf '%s' "$UPLOAD_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload.jks"
+            export ORG_GRADLE_PROJECT_NOTETODO_UPLOAD_STORE_FILE="$RUNNER_TEMP/upload.jks"
+          fi
+          ./gradlew bundleRelease --stacktrace
+
+      - name: Upload release bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-aab
+          path: app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+
       - name: Record screenshots
         run: ./gradlew recordRoborazziDebug --stacktrace
 
