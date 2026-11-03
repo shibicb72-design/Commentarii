@@ -55,6 +55,7 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
@@ -361,10 +362,16 @@ private fun BlockRow(
     }
 }
 
+internal const val FORMAT_TOOLBAR_TAG = "format_toolbar"
+
 @Composable
 private fun FormatToolbar(actions: NoteEditorActions) {
     val colors = AppColors.current
-    Surface(color = colors.tab, contentColor = colors.onTab, modifier = Modifier.fillMaxWidth().imePadding()) {
+    Surface(
+        color = colors.tab,
+        contentColor = colors.onTab,
+        modifier = Modifier.fillMaxWidth().imePadding().testTag(FORMAT_TOOLBAR_TAG),
+    ) {
         Row(
             Modifier.padding(horizontal = 8.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,

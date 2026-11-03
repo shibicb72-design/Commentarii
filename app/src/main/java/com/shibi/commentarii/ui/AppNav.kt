@@ -1,6 +1,8 @@
 package com.shibi.commentarii.ui
 
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -72,7 +74,7 @@ object Routes {
     fun note(id: Long) = "note/$id"
 }
 
-private enum class Tab(val label: Int, val icon: ImageVector) {
+internal enum class Tab(val label: Int, val icon: ImageVector) {
     TODAY(R.string.tab_today, Icons.Filled.Today),
     WEEK(R.string.tab_week, Icons.Outlined.ViewWeek),
     MONTH(R.string.tab_month, Icons.Outlined.CalendarMonth),
@@ -141,22 +143,9 @@ fun AppNav(
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
             contentColor = MaterialTheme.colorScheme.onBackground,
-            bottomBar = {
-                if (compact) {
-                    NavigationBar {
-                        Tab.entries.forEach { tab ->
-                            NavigationBarItem(
-                                selected = tab == current,
-                                onClick = { onTab(tab) },
-                                icon = { Icon(tab.icon, contentDescription = null) },
-                                label = { Text(stringResource(tab.label)) },
-                            )
-                        }
-                    }
-                }
-            },
+            bottomBar = { if (compact) AppBottomBar(current, onTab) },
         ) { padding ->
-            Row(Modifier.padding(padding)) {
+            AppScaffoldBody(padding) {
                 if (!compact) {
                     NavigationRail {
                         Tab.entries.forEach { tab ->
@@ -263,6 +252,34 @@ fun AppNav(
 }
 
 /** Route with its arguments filled in (e.g. `daily/2026-10-18`), or null for entries without a destination route. */
+/** Bottom navigation bar shown on Compact width. */
+@Composable
+internal fun AppBottomBar(current: Tab?, onTab: (Tab) -> Unit) {
+    NavigationBar {
+        Tab.entries.forEach { tab ->
+            NavigationBarItem(
+                selected = tab == current,
+                onClick = { onTab(tab) },
+                icon = { Icon(tab.icon, contentDescription = null) },
+                label = { Text(stringResource(tab.label)) },
+            )
+        }
+    }
+}
+
+/**
+ * Scaffold body: applies the Scaffold [padding] (status bar on top, bottom bar + nav bar below).
+ * [consumeInsets] is a test seam for the old layout; production always uses the default.
+ */
+@Composable
+internal fun AppScaffoldBody(
+    padding: PaddingValues,
+    consumeInsets: Boolean = true,
+    content: @Composable RowScope.() -> Unit,
+) {
+    Row(Modifier.padding(padding), content = content)
+}
+
 private fun concreteRoute(entry: NavBackStackEntry, today: LocalDate): String? = when (val route = entry.destination.route) {
     Routes.DAILY -> Routes.daily(
         entry.arguments?.getString("date")?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: today,
