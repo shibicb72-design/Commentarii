@@ -9,7 +9,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
-/** The user-visible name is "NoteToDo"; the package id stays com.shibi.commentarii so installed data survives. */
+/** The user-visible name is "NoteToDo"; the Play application ID is com.shibi.notetodo (namespace and Kotlin packages stay com.shibi.commentarii). */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35])
 class AppNameTest {
@@ -33,8 +33,8 @@ class AppNameTest {
         assertTrue("strings still naming the old app: $offenders", offenders.isEmpty())
     }
 
-    @Test fun packageIdIsUnchanged() {
-        assertEquals("com.shibi.commentarii", context.packageName)
-        assertEquals("com.shibi.commentarii", context.applicationInfo.packageName)
+    @Test fun applicationIdIsNoteToDo() {
+        assertEquals("com.shibi.notetodo", context.packageName)
+        assertEquals("com.shibi.notetodo", context.applicationInfo.packageName)
     }
 }
