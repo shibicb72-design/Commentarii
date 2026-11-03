@@ -65,7 +65,7 @@ fun DebugLogScreen(container: AppContainer, onBack: () -> Unit, modifier: Modifi
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Button(onClick = {
                     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                    clipboard.setPrimaryClip(ClipData.newPlainText("Commentarii debug log", vm.copyText()))
+                    clipboard.setPrimaryClip(ClipData.newPlainText("NoteToDo debug log", vm.copyText()))
                     Toast.makeText(context, copiedText, Toast.LENGTH_SHORT).show()
                 }) { Text(stringResource(R.string.debug_copy_all)) }
                 OutlinedButton(onClick = vm::clear) { Text(stringResource(R.string.debug_clear)) }
