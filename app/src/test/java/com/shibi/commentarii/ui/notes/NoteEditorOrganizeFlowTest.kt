@@ -338,7 +338,8 @@ class NoteEditorOrganizeFlowTest : NotesTestBase() {
         rule.onNode(hasText(delete) and inDialog).performClick()
         rule.waitForIdle()
 
-        await { routes.lastOrNull() == Routes.NOTES && exists(hasText("Keeper")) }
+        // The list comes back showing its last snapshot until Room's flow delivers the delete, so Keeper alone proves nothing.
+        await { routes.lastOrNull() == Routes.NOTES && exists(hasText("Keeper")) && !exists(hasText("Doomed")) }
         assertFalse("off the list", exists(hasText("Doomed")))
         assertFalse("no undo offered", exists(hasText("Undo", ignoreCase = true)))
         assertNull(page(id))
