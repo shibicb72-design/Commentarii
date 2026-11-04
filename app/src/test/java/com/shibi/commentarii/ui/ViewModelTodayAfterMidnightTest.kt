@@ -1,5 +1,6 @@
 package com.shibi.commentarii.ui
 
+import android.os.Looper
 import androidx.activity.ComponentActivity
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
@@ -35,6 +36,7 @@ import com.shibi.commentarii.ui.theme.CommentariiTheme
 import com.shibi.commentarii.ui.week.WeekPageScreen
 import com.shibi.commentarii.ui.week.WeekViewModel
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.YearMonth
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -49,6 +51,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
@@ -122,14 +125,31 @@ class ViewModelTodayAfterMidnightTest {
     private fun pauseAndResume() {
         rule.activityRule.scenario.moveToState(Lifecycle.State.STARTED)
         rule.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
+        settle()
+    }
+
+    /** The screen going off, the clock reaching [wakeAt] meanwhile, and the screen coming back. ON_STOP also flushes autosave. */
+    private fun screenOffUntil(wakeAt: LocalDateTime) {
+        rule.activityRule.scenario.moveToState(Lifecycle.State.CREATED)
+        clock.set(wakeAt)
+        rule.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
+        settle()
+    }
+
+    /**
+     * Gives a stray reload started by the resume time to finish, so the "nothing changed" checks after it can see one.
+     * Short of the 500 ms autosave debounce, so text typed just before the resume is still unsaved at those checks.
+     */
+    private fun settle() {
+        repeat(10) {
+            shadowOf(Looper.getMainLooper()).idle()
+            Thread.sleep(20)
+        }
         rule.waitForIdle()
     }
 
-    /** The screen going off and coming back. ON_STOP also flushes autosave. */
-    private fun stopAndResume() {
-        rule.activityRule.scenario.moveToState(Lifecycle.State.CREATED)
-        rule.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
-        rule.waitForIdle()
+    private fun waitUntilSaved(pageId: Long, text: String) {
+        rule.waitUntilWithLooper { runBlocking { container.pages.getTasks(pageId) }.any { it.text == text } }
     }
 
     private fun seed(date: LocalDate, text: String, done: Boolean = false) = runBlocking {
@@ -227,10 +247,7 @@ class ViewModelTodayAfterMidnightTest {
         rule.waitForIdle()
         assertOfferDialogShowing()
 
-        rule.activityRule.scenario.moveToState(Lifecycle.State.CREATED)
-        clock.set(day.plusDays(1).atTime(7, 0))
-        rule.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
-        rule.waitForIdle()
+        screenOffUntil(day.plusDays(1).atTime(7, 0))
 
         assertDailyPageShowing()
         assertEquals(day.plusDays(1), vm.state.value.today)
@@ -289,14 +306,12 @@ class ViewModelTodayAfterMidnightTest {
         typeInFirstTodo("typed at 23:59")
         val keysBefore = vm.state.value.todo.map { it.key }
 
-        rule.activityRule.scenario.moveToState(Lifecycle.State.CREATED)
-        clock.set(day.plusDays(1).atTime(7, 0))
-        rule.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
-        rule.waitForIdle()
+        screenOffUntil(day.plusDays(1).atTime(7, 0))
 
         assertEquals("typed at 23:59", vm.state.value.todo[0].text)
         assertEquals(keysBefore, vm.state.value.todo.map { it.key })
         rule.waitUntilWithLooper { tasksOn(day).any { it.text == "typed at 23:59" } }
+        assertEquals(keysBefore, vm.state.value.todo.map { it.key })
         assertEquals(day.plusDays(1), vm.state.value.today)
     }
 
@@ -453,15 +468,15 @@ class ViewModelTodayAfterMidnightTest {
     fun item294_weekPageMovesToTheNextDayAfterTheScreenWasOff() {
         clock.set(day.atTime(23, 59))
         val vm = showWeek(LocalDate.parse("2031-03-10"))
-        clock.set(day.plusDays(1).atTime(7, 0))
-        stopAndResume()
+        screenOffUntil(day.plusDays(1).atTime(7, 0))
         assertEquals(day.plusDays(1), vm.state.value.today)
     }
 
     /** #294 rule (1) for the week page: unsaved text survives the refresh, with no reload. */
     @Test
     fun item294_weekPageKeepsUnsavedTextOverMidnight() {
-        val vm = showWeek(LocalDate.parse("2031-03-10"))
+        val monday = LocalDate.parse("2031-03-10")
+        val vm = showWeek(monday)
         typeInFirstTodo("typed at 23:59")
         val keysBefore = vm.state.value.todo.map { it.key }
 
@@ -469,6 +484,8 @@ class ViewModelTodayAfterMidnightTest {
         pauseAndResume()
 
         assertEquals("typed at 23:59", vm.state.value.todo[0].text)
+        assertEquals(keysBefore, vm.state.value.todo.map { it.key })
+        waitUntilSaved(runBlocking { container.pages.getOrCreateWeekly(monday).id }, "typed at 23:59")
         assertEquals(keysBefore, vm.state.value.todo.map { it.key })
         assertEquals(day.plusDays(1), vm.state.value.today)
     }
@@ -493,7 +510,8 @@ class ViewModelTodayAfterMidnightTest {
     /** #294 rule (1) for the month page: unsaved text survives the refresh, with no reload. */
     @Test
     fun item294_monthPageKeepsUnsavedTextOverMidnight() {
-        val vm = showMonth(YearMonth.parse("2031-03"))
+        val month = YearMonth.parse("2031-03")
+        val vm = showMonth(month)
         typeInFirstTodo("typed at 23:59")
         val keysBefore = vm.state.value.todo.map { it.key }
 
@@ -501,6 +519,8 @@ class ViewModelTodayAfterMidnightTest {
         pauseAndResume()
 
         assertEquals("typed at 23:59", vm.state.value.todo[0].text)
+        assertEquals(keysBefore, vm.state.value.todo.map { it.key })
+        waitUntilSaved(runBlocking { container.pages.getOrCreateMonthly(month.atDay(1)).id }, "typed at 23:59")
         assertEquals(keysBefore, vm.state.value.todo.map { it.key })
         assertEquals(day.plusDays(1), vm.state.value.today)
     }
