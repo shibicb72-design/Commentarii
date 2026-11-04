@@ -2,7 +2,6 @@ package com.shibi.commentarii.ui.notes
 
 import android.content.ClipData
 import android.content.ClipboardManager
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsNode
@@ -410,14 +409,6 @@ class NoteEditorBlocksFlowTest : NotesTestBase() {
 
     private val toolbar get() = rule.onNodeWithTag(FORMAT_TOOLBAR_TAG)
 
-    private fun assertInViewAboveToolbar(index: Int, what: String) {
-        val field = block(index).fetchSemanticsNode()
-        val box = Rect(field.positionInRoot.x, field.positionInRoot.y, field.positionInRoot.x + field.size.width, field.positionInRoot.y + field.size.height)
-        val top = bounds(toolbar).top
-        assertTrue("$what: bottom ${box.bottom} must be above the toolbar's top $top", box.bottom <= top + 1f)
-        assertTrue("$what: top ${box.top} must be on screen", box.top >= 0f)
-    }
-
     @Test
     fun item205_longNoteScrollsWithTheToolbarPinnedAndTypingAtTheEndStaysInView() {
         val blocks = Array(85) { para("Block $it") }
@@ -434,16 +425,6 @@ class NoteEditorBlocksFlowTest : NotesTestBase() {
         assertEquals("the toolbar did not move", pinned, bounds(toolbar))
 
         tapBlock(84)
-        for (i in 0 until 12) {
-            val last = 84 + i
-            pressEnter(block(last))
-            settleAnimations()
-            block(last + 1).assertIsFocused()
-            assertInViewAboveToolbar(last + 1, "after Enter $i")
-            type(last + 1, "typed $i")
-            settleAnimations()
-            assertInViewAboveToolbar(last + 1, "after typing $i")
-        }
-        assertEquals("the toolbar stayed put throughout", pinned, bounds(toolbar))
+        assertTypingAtTheEndStaysInView(lastIndex = 84, times = 12)
     }
 }

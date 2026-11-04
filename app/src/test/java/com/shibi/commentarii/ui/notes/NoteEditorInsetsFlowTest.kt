@@ -8,6 +8,7 @@ import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performScrollTo
 import androidx.core.graphics.Insets
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -25,7 +26,7 @@ import org.junit.Test
 import org.robolectric.annotation.Config
 
 /**
- * Checklist #201, #202: where the format toolbar sits with the keyboard open and closed, on the real AppNav and NoteEditorScreen.
+ * Checklist #201, #202, #205: where the format toolbar sits with the keyboard open and closed, on the real AppNav and NoteEditorScreen.
  * The keyboard is an injected IME inset, as in ImeGapTest, measured from the bottom of the screen so it covers the nav bar too.
  * What a real keyboard reports and what its Back press does are left for a device.
  */
@@ -36,8 +37,8 @@ class NoteEditorInsetsFlowTest : NotesTestBase() {
     private val toolbar get() = rule.onNodeWithTag(FORMAT_TOOLBAR_TAG)
     private val rootBottom get() = rule.onRoot().fetchSemanticsNode().boundsInRoot.bottom
 
-    private fun openEditor(width: WindowWidthSizeClass): Long {
-        val id = seedNote("Note", DocBlock(text = "text"))
+    private fun openEditor(width: WindowWidthSizeClass, vararg blocks: DocBlock = arrayOf(DocBlock(text = "text"))): Long {
+        val id = seedNote("Note", *blocks)
         rule.activity.enableEdgeToEdge()
         rule.setContent {
             CommentariiTheme(dark = false) {
@@ -115,6 +116,23 @@ class NoteEditorInsetsFlowTest : NotesTestBase() {
 
     @Test
     fun item202_toolbarDropsToTheBottomBarWhenTheKeyboardClosesThreeButton() = assertBottomBarToolbarPlacement(NavMode.THREE_BUTTON)
+
+    /** #205 with the space a keyboard really leaves: the toolbar sits on the injected inset and new lines stay above it. */
+    @Test
+    fun item205_typingAtTheEndStaysInViewWithTheKeyboardOpen() {
+        openEditor(WindowWidthSizeClass.Compact, *Array(85) { DocBlock(text = "Block $it") })
+        val imePx = inject(NavMode.GESTURE, keyboardOpen = true)
+        assertFlushOnKeyboard(imePx)
+
+        block(84).performScrollTo()
+        rule.waitForIdle()
+        tapBlock(84)
+        settleAnimations()
+        assertInViewAboveToolbar(84, "the last line once tapped")
+
+        assertTypingAtTheEndStaysInView(lastIndex = 84, times = 12)
+        assertFlushOnKeyboard(imePx)
+    }
 
     /** With no keyboard to close, one Back leaves the editor; the first Back closing a real keyboard needs a device. */
     @Test

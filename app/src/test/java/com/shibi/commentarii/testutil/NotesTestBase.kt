@@ -6,11 +6,14 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
+import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDialog
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performTextInput
@@ -24,7 +27,10 @@ import com.shibi.commentarii.data.DocBlock
 import com.shibi.commentarii.data.PageEntity
 import com.shibi.commentarii.data.SectionKind
 import com.shibi.commentarii.ui.Routes
+import com.shibi.commentarii.ui.notes.FORMAT_TOOLBAR_TAG
 import kotlinx.coroutines.runBlocking
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 
 /**
  * The real Notes list and note editor on the real container, inside AppNav unless a test says otherwise. Seeds through
@@ -133,6 +139,41 @@ abstract class NotesTestBase : DailyPageTestBase() {
     protected fun block(index: Int): SemanticsNodeInteraction = rule.onAllNodes(editorField)[index + 1]
 
     protected fun textOf(node: SemanticsNode) = node.config[SemanticsProperties.EditableText].text
+
+    /** How far the editor's body has scrolled. */
+    protected fun bodyScroll(): Float = rule.onNode(hasScrollAction() and !inDialog).fetchSemanticsNode()
+        .config[SemanticsProperties.VerticalScrollAxisRange].value()
+
+    /**
+     * Enter then typing at the end of a long note, [times] times from block [lastIndex]: each new line must be in view above the
+     * toolbar, the toolbar must not move, and the body must really have scrolled to get it there.
+     */
+    protected fun assertTypingAtTheEndStaysInView(lastIndex: Int, times: Int) {
+        val toolbar = rule.onNodeWithTag(FORMAT_TOOLBAR_TAG)
+        val pinned = bounds(toolbar)
+        val scrollBefore = bodyScroll()
+        for (i in 0 until times) {
+            val last = lastIndex + i
+            pressEnter(block(last))
+            settleAnimations()
+            block(last + 1).assertIsFocused()
+            assertInViewAboveToolbar(last + 1, "after Enter $i")
+            type(last + 1, "typed $i")
+            settleAnimations()
+            assertInViewAboveToolbar(last + 1, "after typing $i")
+        }
+        assertEquals("the toolbar stayed put throughout", pinned, bounds(toolbar))
+        assertTrue("the body scrolled to follow", bodyScroll() > scrollBefore)
+    }
+
+    protected fun assertInViewAboveToolbar(index: Int, what: String) {
+        val field = block(index).fetchSemanticsNode()
+        val top = field.positionInRoot.y
+        val bottom = top + field.size.height
+        val toolbarTop = bounds(rule.onNodeWithTag(FORMAT_TOOLBAR_TAG)).top
+        assertTrue("$what: bottom $bottom must be above the toolbar's top $toolbarTop", bottom <= toolbarTop + 1f)
+        assertTrue("$what: top $top must be on screen", top >= 0f)
+    }
 
     protected fun shownBlocks(): List<String> = fields().drop(1).map(::textOf)
 
