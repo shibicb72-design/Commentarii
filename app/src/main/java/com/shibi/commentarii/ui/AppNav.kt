@@ -25,6 +25,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -108,24 +109,27 @@ fun AppNav(
     onRoutesChanged: (List<String>) -> Unit = {},
     modifier: Modifier = Modifier,
     clock: Clock = container.clock,
+    weekHome: MutableState<String> = rememberSaveable { mutableStateOf(Routes.week(LocalDate.now(clock))) },
+    monthHome: MutableState<String> = rememberSaveable { mutableStateOf(Routes.month(YearMonth.now(clock))) },
 ) {
     val nav = rememberNavController()
     val today = remember { LocalDate.now(clock) }
     val entry by nav.currentBackStackEntryAsState()
     val current = tabOf(entry?.destination?.route)
     val compact = widthClass == WindowWidthSizeClass.Compact
-    // Week and Month restore the page they last showed, unless the week or month has changed since their last tap.
-    var weekHome by rememberSaveable { mutableStateOf(Routes.week(today)) }
-    var monthHome by rememberSaveable { mutableStateOf(Routes.month(YearMonth.from(today))) }
     // Read at tap time: the app can stay open past midnight. [today] stays fixed because it feeds the graph's defaultValue.
+    // Week and Month restore the page they last showed, unless the week or month has changed since their last tap.
+    // MainActivity holds their homes above the lock screen, which removes AppNav from composition.
     val onTab: (Tab) -> Unit = { tab ->
         val now = LocalDate.now(clock)
         val restore = when (tab) {
-            Tab.WEEK -> (Routes.week(now) == weekHome).also { weekHome = Routes.week(now) }
-            Tab.MONTH -> Routes.month(YearMonth.from(now)).let { home -> (home == monthHome).also { monthHome = home } }
+            Tab.WEEK -> (Routes.week(now) == weekHome.value).also { weekHome.value = Routes.week(now) }
+            Tab.MONTH -> Routes.month(YearMonth.from(now)).let { home -> (home == monthHome.value).also { monthHome.value = home } }
             else -> true
         }
         navigateToTab(nav, tab, now, restore)
+        // Skipping a saved page keeps it, and this navigate can have just saved the old page too, so discard it last.
+        if (!restore) nav.clearBackStack(if (tab == Tab.WEEK) Routes.WEEK else Routes.MONTH)
     }
 
     // After an unlock the previous back stack is replayed; recording starts only once that is done.

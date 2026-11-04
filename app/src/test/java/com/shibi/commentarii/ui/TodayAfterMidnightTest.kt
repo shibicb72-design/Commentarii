@@ -2,6 +2,11 @@ package com.shibi.commentarii.ui
 
 import androidx.activity.ComponentActivity
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
@@ -9,13 +14,16 @@ import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.shibi.commentarii.CommentariiApp
 import com.shibi.commentarii.R
+import com.shibi.commentarii.ui.lock.NavRestore
 import com.shibi.commentarii.ui.theme.CommentariiTheme
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
+import java.time.YearMonth
 import java.time.ZoneId
 import java.time.ZoneOffset
 import org.junit.Assert.assertEquals
@@ -45,6 +53,8 @@ class TodayAfterMidnightTest {
 
     private var routes = emptyList<String>()
 
+    private var locked by mutableStateOf(false)
+
     private fun show(clock: Clock) {
         val container = (rule.activity.application as CommentariiApp).container
         rule.setContent {
@@ -52,6 +62,51 @@ class TodayAfterMidnightTest {
                 AppNav(container, WindowWidthSizeClass.Compact, onRoutesChanged = { routes = it }, clock = clock)
             }
         }
+        rule.waitForIdle()
+    }
+
+    /** Hosts AppNav the way MainActivity does: the lock screen removes it from composition and unlocking replays the routes. */
+    private fun showLockable(clock: Clock) {
+        val container = (rule.activity.application as CommentariiApp).container
+        var savedRoutes = ""
+        rule.setContent {
+            val weekHome = rememberSaveable { mutableStateOf(Routes.week(LocalDate.now(clock))) }
+            val monthHome = rememberSaveable { mutableStateOf(Routes.month(YearMonth.now(clock))) }
+            CommentariiTheme(dark = false) {
+                if (!locked) {
+                    AppNav(
+                        container,
+                        WindowWidthSizeClass.Compact,
+                        restoreRoutes = remember { NavRestore.decode(savedRoutes) },
+                        onRoutesChanged = {
+                            routes = it
+                            savedRoutes = NavRestore.encode(it)
+                        },
+                        clock = clock,
+                        weekHome = weekHome,
+                        monthHome = monthHome,
+                    )
+                }
+            }
+        }
+        rule.waitForIdle()
+    }
+
+    private fun lockUntil(clock: MovableClock, date: String) {
+        locked = true
+        rule.waitForIdle()
+        clock.date = LocalDate.parse(date)
+        locked = false
+        rule.waitForIdle()
+    }
+
+    private fun pressBack() {
+        rule.runOnUiThread { rule.activity.onBackPressedDispatcher.onBackPressed() }
+        rule.waitForIdle()
+    }
+
+    private fun tapDescription(description: Int) {
+        rule.onNode(hasContentDescription(rule.activity.getString(description))).performClick()
         rule.waitForIdle()
     }
 
@@ -181,6 +236,128 @@ class TodayAfterMidnightTest {
         clock.date = LocalDate.parse("2031-03-13")
         tap(Tab.WEEK)
         assertEquals("week/2031-03-17", routes.last())
+    }
+
+    /** Overnight lock: the replay puts the old week back on the stack, and the tab must still know it is old. */
+    @Test
+    fun lockReplayAfterMidnightStillLeadsToTheNewWeek() {
+        val clock = MovableClock(LocalDate.parse("2031-03-16"))
+        showLockable(clock)
+        tap(Tab.WEEK)
+        lockUntil(clock, "2031-03-17")
+        assertEquals("week/2031-03-10", routes.last())
+        tap(Tab.WEEK)
+        assertEquals("week/2031-03-17", routes.last())
+    }
+
+    @Test
+    fun lockReplayAfterMidnightStillLeadsToTheNewMonth() {
+        val clock = MovableClock(LocalDate.parse("2031-03-31"))
+        showLockable(clock)
+        tap(Tab.MONTH)
+        lockUntil(clock, "2031-04-01")
+        assertEquals("month/2031-03", routes.last())
+        tap(Tab.MONTH)
+        assertEquals("month/2031-04", routes.last())
+    }
+
+    @Test
+    fun lockReplayWithinTheSameWeekKeepsThePickedWeek() {
+        val clock = MovableClock(LocalDate.parse("2031-03-12"))
+        showLockable(clock)
+        tap(Tab.WEEK)
+        tapDescription(R.string.week_next)
+        assertEquals("week/2031-03-17", routes.last())
+        lockUntil(clock, "2031-03-13")
+        tap(Tab.WEEK)
+        assertEquals("week/2031-03-17", routes.last())
+    }
+
+    /** A page saved before midnight must not outlive the rollover through a later pop that saves nothing. */
+    @Test
+    fun oldWeekDoesNotComeBackAfterTodayPopsTheNewWeek() {
+        val clock = MovableClock(LocalDate.parse("2031-03-16"))
+        show(clock)
+        tap(Tab.WEEK)
+        tap(Tab.NOTES)
+        clock.date = LocalDate.parse("2031-03-17")
+        tap(Tab.WEEK)
+        assertEquals("week/2031-03-17", routes.last())
+        tap(Tab.TODAY)
+        tap(Tab.WEEK)
+        assertEquals("week/2031-03-17", routes.last())
+        rule.onNodeWithText(rule.activity.getString(R.string.week_title_fmt, "Mar 17", "Mar 23")).assertExists()
+    }
+
+    @Test
+    fun oldWeekDoesNotComeBackAfterBackPopsTheNewWeek() {
+        val clock = MovableClock(LocalDate.parse("2031-03-16"))
+        show(clock)
+        tap(Tab.WEEK)
+        tap(Tab.NOTES)
+        clock.date = LocalDate.parse("2031-03-17")
+        tap(Tab.WEEK)
+        pressBack()
+        assertEquals(listOf("daily/2031-03-16"), routes)
+        tap(Tab.WEEK)
+        assertEquals("week/2031-03-17", routes.last())
+    }
+
+    @Test
+    fun oldMonthDoesNotComeBackAfterTodayPopsTheNewMonth() {
+        val clock = MovableClock(LocalDate.parse("2031-03-31"))
+        show(clock)
+        tap(Tab.MONTH)
+        tap(Tab.NOTES)
+        clock.date = LocalDate.parse("2031-04-01")
+        tap(Tab.MONTH)
+        assertEquals("month/2031-04", routes.last())
+        tap(Tab.TODAY)
+        tap(Tab.MONTH)
+        assertEquals("month/2031-04", routes.last())
+    }
+
+    /** The rollover tap itself saves the old page when it is on screen, so the discard has to come after it. */
+    @Test
+    fun oldWeekSavedByTheRolloverTapDoesNotComeBack() {
+        val clock = MovableClock(LocalDate.parse("2031-03-16"))
+        show(clock)
+        tap(Tab.WEEK)
+        clock.date = LocalDate.parse("2031-03-17")
+        tap(Tab.WEEK)
+        assertEquals("week/2031-03-17", routes.last())
+        tap(Tab.TODAY)
+        tap(Tab.WEEK)
+        assertEquals("week/2031-03-17", routes.last())
+    }
+
+    /** Saving only records a destination that has no saved page yet, so the old page would also block this one. */
+    @Test
+    fun weekPickedAfterTheRolloverIsRestored() {
+        val clock = MovableClock(LocalDate.parse("2031-03-16"))
+        show(clock)
+        tap(Tab.WEEK)
+        tap(Tab.NOTES)
+        clock.date = LocalDate.parse("2031-03-17")
+        tap(Tab.WEEK)
+        tapDescription(R.string.week_next)
+        assertEquals("week/2031-03-24", routes.last())
+        tap(Tab.NOTES)
+        tap(Tab.WEEK)
+        assertEquals("week/2031-03-24", routes.last())
+    }
+
+    @Test
+    fun monthTabStillRestoresThePickedMonthWithinTheSameMonth() {
+        val clock = MovableClock(LocalDate.parse("2031-03-12"))
+        show(clock)
+        tap(Tab.MONTH)
+        tapDescription(R.string.month_next)
+        assertEquals("month/2031-04", routes.last())
+        tap(Tab.NOTES)
+        clock.date = LocalDate.parse("2031-03-13")
+        tap(Tab.MONTH)
+        assertEquals("month/2031-04", routes.last())
     }
 
     /** The graph's defaultValue must stay fixed: rebuilding the graph after midnight could clear the back stack. */

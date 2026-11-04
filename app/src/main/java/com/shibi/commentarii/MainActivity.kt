@@ -28,6 +28,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.shibi.commentarii.data.DarkMode
 import com.shibi.commentarii.notify.Notifications
 import com.shibi.commentarii.ui.AppNav
+import com.shibi.commentarii.ui.Routes
 import com.shibi.commentarii.ui.lock.BiometricAuth
 import com.shibi.commentarii.ui.lock.LockScreen
 import com.shibi.commentarii.ui.lock.NavRestore
@@ -37,6 +38,7 @@ import com.shibi.commentarii.ui.lock.unlockAction
 import com.shibi.commentarii.ui.theme.AppThemes
 import com.shibi.commentarii.ui.theme.CommentariiTheme
 import java.time.LocalDate
+import java.time.YearMonth
 
 class MainActivity : AppCompatActivity() {
     /** Date requested by a reminder notification; consumed by AppNav. */
@@ -74,6 +76,9 @@ class MainActivity : AppCompatActivity() {
             val showLock = lockEnabled == true && locked
             // Back stack of the unlocked app, kept as route strings only (no screen is composed while locked).
             var savedRoutes by rememberSaveable { mutableStateOf("") }
+            // What the Week and Month tabs last treated as current, which must outlive a lock for AppNav to spot a rollover.
+            val weekHome = rememberSaveable { mutableStateOf(Routes.week(LocalDate.now(container.clock))) }
+            val monthHome = rememberSaveable { mutableStateOf(Routes.month(YearMonth.now(container.clock))) }
 
             LaunchedEffect(dark) {
                 val style = if (dark) {
@@ -123,6 +128,8 @@ class MainActivity : AppCompatActivity() {
                         onOpenDateHandled = { openDate = null },
                         restoreRoutes = remember { NavRestore.decode(savedRoutes) },
                         onRoutesChanged = { savedRoutes = NavRestore.encode(it) },
+                        weekHome = weekHome,
+                        monthHome = monthHome,
                     )
                 }
             }
