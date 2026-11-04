@@ -27,6 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -56,6 +57,7 @@ import com.shibi.commentarii.ui.search.SearchScreen
 import com.shibi.commentarii.ui.settings.DebugLogScreen
 import com.shibi.commentarii.ui.settings.SettingsScreen
 import com.shibi.commentarii.ui.week.WeekPageScreen
+import java.time.Clock
 import java.time.LocalDate
 import java.time.YearMonth
 
@@ -105,13 +107,26 @@ fun AppNav(
     restoreRoutes: List<String> = emptyList(),
     onRoutesChanged: (List<String>) -> Unit = {},
     modifier: Modifier = Modifier,
+    clock: Clock = container.clock,
 ) {
     val nav = rememberNavController()
-    val today = remember { LocalDate.now(container.clock) }
+    val today = remember { LocalDate.now(clock) }
     val entry by nav.currentBackStackEntryAsState()
     val current = tabOf(entry?.destination?.route)
     val compact = widthClass == WindowWidthSizeClass.Compact
-    val onTab: (Tab) -> Unit = { navigateToTab(nav, it, today) }
+    // Week and Month restore the page they last showed, unless the week or month has changed since their last tap.
+    var weekHome by rememberSaveable { mutableStateOf(Routes.week(today)) }
+    var monthHome by rememberSaveable { mutableStateOf(Routes.month(YearMonth.from(today))) }
+    // Read at tap time: the app can stay open past midnight. [today] stays fixed because it feeds the graph's defaultValue.
+    val onTab: (Tab) -> Unit = { tab ->
+        val now = LocalDate.now(clock)
+        val restore = when (tab) {
+            Tab.WEEK -> (Routes.week(now) == weekHome).also { weekHome = Routes.week(now) }
+            Tab.MONTH -> Routes.month(YearMonth.from(now)).let { home -> (home == monthHome).also { monthHome = home } }
+            else -> true
+        }
+        navigateToTab(nav, tab, now, restore)
+    }
 
     // After an unlock the previous back stack is replayed; recording starts only once that is done.
     var restored by remember { mutableStateOf(restoreRoutes.isEmpty()) }
@@ -302,7 +317,7 @@ private fun concreteRoute(entry: NavBackStackEntry, today: LocalDate): String? =
     else -> route
 }
 
-private fun navigateToTab(nav: NavHostController, tab: Tab, today: LocalDate) {
+private fun navigateToTab(nav: NavHostController, tab: Tab, today: LocalDate, restore: Boolean) {
     when (tab) {
         Tab.TODAY -> nav.navigate(Routes.daily(today)) {
             popUpTo(nav.graph.findStartDestination().id) { inclusive = true }
@@ -319,7 +334,7 @@ private fun navigateToTab(nav: NavHostController, tab: Tab, today: LocalDate) {
         ) {
             popUpTo(nav.graph.findStartDestination().id) { saveState = true }
             launchSingleTop = true
-            restoreState = true
+            restoreState = restore
         }
     }
 }
