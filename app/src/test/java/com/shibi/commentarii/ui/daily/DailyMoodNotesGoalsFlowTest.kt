@@ -115,9 +115,8 @@ class DailyMoodNotesGoalsFlowTest : DailyPageTestBase() {
         await { mood(today) == 5 }
 
         tapTab(R.string.tab_week)
-        await { exists(hasText(str(R.string.section_mood_week))) || runCatching { scrollTo(hasText(str(R.string.section_mood_week))) }.isSuccess }
-        scrollTo(hasContentDescription(str(R.string.mood_none)))
-        await { exists(hasContentDescription(veryHappy)) }
+        // Loading makes the page taller and pushes the mood card out of the lazy list, so scroll to the face on every try.
+        await { runCatching { scrollTo(hasContentDescription(veryHappy)) }.isSuccess }
         val faces = rule.onAllNodes(hasContentDescription(str(R.string.mood_none))).fetchSemanticsNodes()
             .plus(rule.onAllNodes(hasContentDescription(veryHappy)).fetchSemanticsNodes())
             .sortedBy { it.boundsInRoot.left }
