@@ -76,6 +76,19 @@ abstract class NotesTestBase : DailyPageTestBase() {
 
     protected fun savedTags(id: Long) = runBlocking { container.pages.getTagsForPage(id) }.map { it.name }
 
+    /**
+     * Milliseconds from [start] until [condition] holds, polling the database directly. The debounce runs on real time on
+     * Dispatchers.Default, so neither the compose clock nor the looper moves it, and this needs neither of them.
+     */
+    protected fun millisUntil(start: Long, condition: () -> Boolean): Long {
+        val deadline = System.nanoTime() + 5_000_000_000L
+        while (!condition()) {
+            check(System.nanoTime() < deadline) { "never saved" }
+            Thread.sleep(1)
+        }
+        return (System.nanoTime() - start) / 1_000_000
+    }
+
     // ---- Moving around in AppNav ----
 
     protected fun openNotesTab() {

@@ -338,4 +338,27 @@ class NotesListFlowTest : NotesTestBase() {
         assertFalse(shows("old body"))
         assertTrue("on that card", abs(cardTop("Keep") - cardTop("new body")) < 1f)
     }
+
+    /**
+     * Only the resume refresh can bring this one: attaching a tag that already exists writes neither the pages table nor the tags
+     * table, which are what the list observes. The test above also edits the body, which would re-read the card anyway.
+     */
+    @Test
+    fun item180_attachingAnExistingTagAloneShowsOnTheCardOnReturn() {
+        val id = seedNote("Keep", para("body"))
+        runBlocking { container.pages.getOrCreateTag("existing") }
+        openNotesTab()
+        await { shows("Keep") && exists(chipRow) }
+        assertFalse("not on the card yet", exists(hasText("Keep") and hasText("#existing")))
+
+        openNote("Keep", id)
+        openOrganize()
+        rule.onNode(hasText("#existing") and inDialog).performClick()
+        rule.waitForIdle()
+        await { savedTags(id) == listOf("existing") }
+        tapDone()
+        leaveEditor()
+
+        await { exists(hasText("Keep") and hasText("#existing")) }
+    }
 }

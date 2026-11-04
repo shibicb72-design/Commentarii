@@ -35,20 +35,10 @@ class NoteEditorHostedFlowTest : NotesTestBase() {
 
     private fun savedText(id: Long) = savedTexts(id).single()
 
-    /** Milliseconds from [start] until [condition] holds, polling the database directly. */
-    private fun millisUntil(start: Long, condition: () -> Boolean): Long {
-        val deadline = System.nanoTime() + 5_000_000_000L
-        while (!condition()) {
-            check(System.nanoTime() < deadline) { "never saved" }
-            Thread.sleep(1)
-        }
-        return (System.nanoTime() - start) / 1_000_000
-    }
-
     /**
-     * The debounce runs on real time on Dispatchers.Default, so the compose clock cannot move it. The clock is held still only so
-     * no frames run inside the timed part. [start] is taken before the edit exists, so a save seen under 500 ms after it can't be
-     * the debounce's. A slower attempt says nothing either way, so it gets another go; each attempt is a new edit.
+     * The compose clock cannot move the debounce, so it is held still only to run no frames inside the timed part. `start` is
+     * taken before the edit exists, so a save seen under 500 ms after it can't be the debounce's. A slower attempt says nothing
+     * either way, so it gets another go; each attempt is a new edit.
      */
     @Test
     fun item215_backArrowSavesTheEditBeforeTheDebounceCould() {

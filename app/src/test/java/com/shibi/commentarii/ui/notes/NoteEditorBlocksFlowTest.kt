@@ -109,24 +109,20 @@ class NoteEditorBlocksFlowTest : NotesTestBase() {
         await { page(id)!!.title == "Plan" }
     }
 
-    /** The "saved after 500 ms" clause: a read that finishes inside the debounce must not see the edit, and later one must. */
+    /**
+     * The "saved after 500 ms" clause, with the screen left alone. `start` is taken before the edit, so the debounce can only end
+     * later than start + 500 ms: a save seen any sooner means it does not wait that long.
+     */
     @Test
     fun item181_titleIsSavedOnlyAfterTheDebounce() {
         openNotesTab()
         val id = createNoteWithFab()
-        var conclusive = 0
-        repeat(5) { attempt ->
-            val start = System.nanoTime()
-            titleField().performTextInput("$attempt")
-            val savedEarly = page(id)!!.title
-            val elapsedMs = (System.nanoTime() - start) / 1_000_000
-            if (elapsedMs < 450) {
-                conclusive++
-                assertFalse("saved after only $elapsedMs ms", savedEarly.endsWith("$attempt"))
-            }
-            await { page(id)!!.title.endsWith("$attempt") }
-        }
-        assertTrue("no read landed inside the debounce, so this run proved nothing", conclusive > 0)
+        val start = System.nanoTime()
+        titleField().performTextInput("Plan")
+
+        val savedAfter = millisUntil(start) { page(id)!!.title == "Plan" }
+
+        assertTrue("saved after only $savedAfter ms", savedAfter >= 500)
     }
 
     @Test
