@@ -15,10 +15,8 @@ import com.shibi.commentarii.CommentariiApp
 import com.shibi.commentarii.MainActivity
 import com.shibi.commentarii.R
 import com.shibi.commentarii.debug.DebugLog
+import com.shibi.commentarii.ui.common.minuteFormatter
 import java.time.Clock
-import java.time.LocalTime
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
 
 /** The app's shared debug log (the container's when available, else a file-backed instance on the same file). */
 internal fun Context.debugLog(): DebugLog =
@@ -33,7 +31,6 @@ object Notifications {
     const val EXTRA_TEXT = "com.shibi.commentarii.extra.TEXT"
     const val EXTRA_ENTRY_ID = "com.shibi.commentarii.extra.ENTRY_ID"
     const val EXTRA_MINUTE = "com.shibi.commentarii.extra.MINUTE"
-    private val TIME: DateTimeFormatter = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
 
     fun ensureChannel(context: Context) {
         val manager = context.getSystemService(NotificationManager::class.java)
@@ -51,7 +48,7 @@ object Notifications {
         if (minuteOfDay < 0) {
             context.getString(R.string.notif_now, text)
         } else {
-            context.getString(R.string.notif_now_at, TIME.format(LocalTime.of(minuteOfDay / 60, minuteOfDay % 60)), text)
+            context.getString(R.string.notif_now_at, minuteFormatter(context)(minuteOfDay), text)
         }
 
     /** Posts "Now (hh:mm): text"; logs and does nothing when notifications are not allowed. */

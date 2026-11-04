@@ -2,6 +2,7 @@
 
 package com.shibi.commentarii.ui.daily
 
+import android.text.format.DateFormat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -37,18 +38,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.shibi.commentarii.R
+import com.shibi.commentarii.ui.common.minuteFormatter
 import com.shibi.commentarii.ui.theme.AppColors
 import com.shibi.commentarii.ui.theme.ThemedBullet
 import com.shibi.commentarii.ui.theme.currentArt
 import com.shibi.commentarii.ui.theme.themedBadge
-import java.time.LocalTime
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
 
 @Composable
 fun PrioritiesCard(items: List<TaskUi>, actions: TaskListActions, modifier: Modifier = Modifier) {
@@ -140,10 +140,6 @@ fun DontForgetCard(items: List<TaskUi>, actions: TaskListActions, modifier: Modi
     }
 }
 
-private val TimeFormat: DateTimeFormatter = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
-
-private fun formatMinute(minuteOfDay: Int): String = LocalTime.of(minuteOfDay / 60, minuteOfDay % 60).format(TimeFormat)
-
 @Composable
 fun ScheduleCard(
     rows: List<ScheduleRowUi>,
@@ -153,6 +149,7 @@ fun ScheduleCard(
     modifier: Modifier = Modifier,
 ) {
     var picking by remember { mutableStateOf(false) }
+    val formatMinute = minuteFormatter(LocalContext.current)
     SectionCard(stringResource(R.string.section_schedule), modifier) {
         rows.forEach { row ->
             LineField(
@@ -195,7 +192,11 @@ fun ScheduleCard(
 
 @Composable
 private fun TimePickerDialog(onDismiss: () -> Unit, onConfirm: (Int) -> Unit) {
-    val state = rememberTimePickerState(initialHour = 8, initialMinute = 0, is24Hour = false)
+    val state = rememberTimePickerState(
+        initialHour = 8,
+        initialMinute = 0,
+        is24Hour = DateFormat.is24HourFormat(LocalContext.current),
+    )
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             shape = MaterialTheme.shapes.extraLarge,
