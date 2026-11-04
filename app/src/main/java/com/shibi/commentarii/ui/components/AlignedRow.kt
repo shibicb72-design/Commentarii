@@ -1,5 +1,6 @@
 package com.shibi.commentarii.ui.components
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -36,6 +37,7 @@ fun firstLineTopPadding(textStyle: TextStyle): Dp = maxOf(0.dp, (TargetSize - li
 /**
  * Row for checkbox/bullet style lines: [leading] and [trailing] sit in boxes of at least 48 dp at the top and the first line of
  * [content] is centred on them; further lines of a multi-line text flow below. For one line it equals a centred Row.
+ * Several [trailing] controls are laid out side by side, each with its own touch target.
  * [content] receives the top padding to apply to the text.
  */
 @Composable
@@ -58,9 +60,10 @@ fun FirstLineRow(
         }
         content(Modifier.padding(top = topPad))
         if (trailing != null) {
-            Box(
+            Row(
                 Modifier.padding(top = controlPad).defaultMinSize(TargetSize, TargetSize),
-                contentAlignment = Alignment.Center,
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
             ) { trailing() }
         }
     }
