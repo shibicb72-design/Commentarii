@@ -126,10 +126,12 @@ class SettingsViewModel(
                     val input = resolver.openInputStream(uri) ?: error("Cannot open input")
                     input.use { String(it.readBytes(), Charsets.UTF_8) }
                 }
-                // Import replaces all rows (new ids), so drop the old alarms first and register the new ones after.
+                // Import replaces all rows (new ids), so the old alarms go and the new ones come, but only once it has
+                // worked: a rejected file changes nothing, so its reminders must keep ringing.
                 val from = LocalDate.now(container.clock).minusDays(1)
-                container.alarms.cancel(container.pages.getUpcomingSchedule(from).map { it.id })
+                val oldIds = container.pages.getUpcomingSchedule(from).map { it.id }
                 container.exportImport.import(json)
+                container.alarms.cancel(oldIds)
                 container.rescheduleAllAlarms("settings")
                 SettingsMessage.IMPORT_OK
             } catch (e: CancellationException) {
