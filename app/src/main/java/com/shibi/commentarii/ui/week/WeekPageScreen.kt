@@ -25,6 +25,7 @@ fun WeekPageScreen(
     val vm: WeekViewModel = viewModel(key = "week-$monday", factory = WeekViewModel.factory(container, monday))
     val state by vm.state.collectAsStateWithLifecycle()
     LifecycleEventEffect(Lifecycle.Event.ON_STOP) { vm.flushNow() }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { vm.refreshToday() }
     val actions = remember(vm, onSelectWeek, onOpenDay) { vm.buildActions(onSelectWeek, onOpenDay) }
     WeekPageContent(state, actions, windowWidthClass, modifier)
 }

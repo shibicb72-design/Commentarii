@@ -26,6 +26,7 @@ fun MonthPageScreen(
     val vm: MonthViewModel = viewModel(key = "month-$month", factory = MonthViewModel.factory(container, month))
     val state by vm.state.collectAsStateWithLifecycle()
     LifecycleEventEffect(Lifecycle.Event.ON_STOP) { vm.flushNow() }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { vm.refreshToday() }
     val actions = remember(vm, onSelectMonth, onOpenDay) { vm.buildActions(onSelectMonth, onOpenDay) }
     MonthPageContent(state, actions, windowWidthClass, modifier)
 }

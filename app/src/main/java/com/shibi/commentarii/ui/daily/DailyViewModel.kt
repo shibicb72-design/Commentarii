@@ -17,6 +17,7 @@ import com.shibi.commentarii.domain.applyRollover
 import com.shibi.commentarii.domain.computeRollover
 import com.shibi.commentarii.domain.shouldShowExportReminder
 import com.shibi.commentarii.domain.weekStart
+import java.time.Clock
 import java.time.LocalDate
 import java.time.YearMonth
 import java.util.concurrent.atomic.AtomicLong
@@ -49,14 +50,15 @@ import kotlinx.coroutines.withContext
 class DailyViewModel(
     private val container: AppContainer,
     val date: LocalDate,
+    private val clock: Clock = container.clock,
 ) : ViewModel() {
     private val pages = container.pages
 
-    private val _state = MutableStateFlow(DailyUiState(date = date, today = LocalDate.now(container.clock)))
+    private val _state = MutableStateFlow(DailyUiState(date = date, today = LocalDate.now(clock)))
     val state: StateFlow<DailyUiState> = _state.asStateFlow()
 
     private val settings = container.settings
-    private val isToday = date == LocalDate.now(container.clock)
+    private val isToday = MutableStateFlow(date == LocalDate.now(clock))
 
     private val rolloverSession = RolloverSession(
         date = date,
@@ -72,16 +74,17 @@ class DailyViewModel(
 
     /** Whether the export reminder banner shows (today's page only). */
     val reminderVisible: StateFlow<Boolean> = combine(
+        isToday,
         settings.exportReminderEnabled,
         settings.lastExportAt,
         settings.reminderDismissedAt,
         flow { emit(pages.hasUserData()) },
-    ) { enabled, last, dismissed, hasData ->
-        isToday && shouldShowExportReminder(enabled, hasData, last, dismissed, container.clock.instant())
+    ) { today, enabled, last, dismissed, hasData ->
+        today && shouldShowExportReminder(enabled, hasData, last, dismissed, clock.instant())
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
     fun dismissReminder() {
-        viewModelScope.launch { settings.setReminderDismissedAt(container.clock.instant()) }
+        viewModelScope.launch { settings.setReminderDismissedAt(clock.instant()) }
     }
 
     private suspend fun checkRollover() {
@@ -89,7 +92,8 @@ class DailyViewModel(
         val offer = previous?.let {
             computeRollover(date, settings.lastOpenedDate.first(), it.date, pages.getTasks(it.id))
         }
-        rolloverSession.onChecked(offer)
+        // Midnight may have passed during the reads above.
+        if (isToday.value) rolloverSession.onChecked(offer)
     }
 
     /** Applies the chosen items (empty = skip) and records that today has been opened. */
@@ -148,7 +152,7 @@ class DailyViewModel(
             )
         }
         loaded = true
-        if (isToday) checkRollover()
+        if (isToday.value) checkRollover()
 
         viewModelScope.launch {
             pages.observePage(page.id).collect { p ->
@@ -188,6 +192,18 @@ class DailyViewModel(
                 rows.filter { it.text.isNotBlank() }.map { PeriodGoal(it.text, it.done) }
             }
         }
+    }
+
+    /**
+     * Re-reads the date when the page resumes, because it can stay open overnight. Only the date changes: load() and
+     * checkRollover() would drop unsaved text, so a page that has just become today first offers rollover on its next load.
+     */
+    fun refreshToday() {
+        val now = LocalDate.now(clock)
+        if (now == _state.value.today) return
+        _state.update { it.copy(today = now) }
+        isToday.value = date == now
+        if (!isToday.value) rolloverSession.dismiss()
     }
 
     // ---- Editing ----
@@ -384,10 +400,10 @@ class DailyViewModel(
         private const val DIRTY_SCHEDULE = "SCHEDULE"
         private const val DIRTY_NOTES = "NOTES"
 
-        fun factory(container: AppContainer, date: LocalDate): ViewModelProvider.Factory =
+        fun factory(container: AppContainer, date: LocalDate, clock: Clock = container.clock): ViewModelProvider.Factory =
             object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
-                override fun <T : ViewModel> create(modelClass: Class<T>): T = DailyViewModel(container, date) as T
+                override fun <T : ViewModel> create(modelClass: Class<T>): T = DailyViewModel(container, date, clock) as T
             }
     }
 }

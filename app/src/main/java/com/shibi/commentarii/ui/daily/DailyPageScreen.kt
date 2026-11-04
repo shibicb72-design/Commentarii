@@ -46,6 +46,7 @@ fun DailyPageScreen(
     val vm: DailyViewModel = viewModel(key = "daily-$date", factory = DailyViewModel.factory(container, date))
     val state by vm.state.collectAsStateWithLifecycle()
     LifecycleEventEffect(Lifecycle.Event.ON_STOP) { vm.flushNow() }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { vm.refreshToday() }
     val actions = remember(vm, onSelectDate, onOpenWeek, onOpenMonth) {
         vm.buildActions(onSelectDate, onOpenWeek, onOpenMonth)
     }

@@ -17,6 +17,7 @@ import com.shibi.commentarii.ui.common.padTasks
 import com.shibi.commentarii.ui.common.saveTaskRows
 import com.shibi.commentarii.ui.common.taskListActions
 import com.shibi.commentarii.ui.daily.TaskUi
+import java.time.Clock
 import java.time.LocalDate
 import java.util.concurrent.atomic.AtomicLong
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,12 +30,13 @@ import kotlinx.coroutines.launch
 class WeekViewModel(
     private val container: AppContainer,
     val monday: LocalDate,
+    private val clock: Clock = container.clock,
 ) : ViewModel() {
     private val pages = container.pages
     private val days = weekDays(monday)
 
     private val _state = MutableStateFlow(
-        WeekUiState(monday = monday, today = LocalDate.now(container.clock), loaded = false),
+        WeekUiState(monday = monday, today = LocalDate.now(clock), loaded = false),
     )
     val state: StateFlow<WeekUiState> = _state.asStateFlow()
 
@@ -111,6 +113,11 @@ class WeekViewModel(
         return Summary(days = dayUi, moods = days.map { moodByDate[it] })
     }
 
+    /** Re-reads the date when the page resumes, because it can stay open overnight. Never reloads: that would drop unsaved text. */
+    fun refreshToday() {
+        _state.update { it.copy(today = LocalDate.now(clock)) }
+    }
+
     // ---- Editing ----
 
     // Edits made before the initial load finishes are ignored: load() would overwrite them anyway.
@@ -180,10 +187,10 @@ class WeekViewModel(
         private const val DIRTY_REVIEW_WELL = "REVIEW_WELL"
         private const val DIRTY_REVIEW_IMPROVE = "REVIEW_IMPROVE"
 
-        fun factory(container: AppContainer, monday: LocalDate): ViewModelProvider.Factory =
+        fun factory(container: AppContainer, monday: LocalDate, clock: Clock = container.clock): ViewModelProvider.Factory =
             object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
-                override fun <T : ViewModel> create(modelClass: Class<T>): T = WeekViewModel(container, monday) as T
+                override fun <T : ViewModel> create(modelClass: Class<T>): T = WeekViewModel(container, monday, clock) as T
             }
     }
 }

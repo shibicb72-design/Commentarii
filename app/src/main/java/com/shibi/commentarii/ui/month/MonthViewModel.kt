@@ -18,6 +18,7 @@ import com.shibi.commentarii.ui.common.padTasks
 import com.shibi.commentarii.ui.common.saveTaskRows
 import com.shibi.commentarii.ui.common.taskListActions
 import com.shibi.commentarii.ui.daily.TaskUi
+import java.time.Clock
 import java.time.LocalDate
 import java.time.YearMonth
 import java.util.concurrent.atomic.AtomicLong
@@ -31,15 +32,15 @@ import kotlinx.coroutines.launch
 class MonthViewModel(
     private val container: AppContainer,
     val month: YearMonth,
+    private val clock: Clock = container.clock,
 ) : ViewModel() {
     private val pages = container.pages
-    private val today = LocalDate.now(container.clock)
     private val cells = monthGrid(month)
 
     private val _state = MutableStateFlow(
         MonthUiState(
             month = month,
-            today = today,
+            today = LocalDate.now(clock),
             grid = cells.map { MonthDayUi(it.date, it.inMonth) },
             loaded = false,
         ),
@@ -103,6 +104,11 @@ class MonthViewModel(
     private suspend fun text(kind: String): String =
         pages.getBlockDocument(pageId, kind).blocks.joinToString("\n") { it.text }
 
+    /** Re-reads the date when the page resumes, because it can stay open overnight. Never reloads: that would drop unsaved text. */
+    fun refreshToday() {
+        _state.update { it.copy(today = LocalDate.now(clock)) }
+    }
+
     // ---- Editing ----
 
     // Edits made before the initial load finishes are ignored: load() would overwrite them anyway.
@@ -126,6 +132,7 @@ class MonthViewModel(
         goals = taskListActions({ editTasks(TaskSection.GOALS, it) }, ::blankRow, minRows = 0),
         todo = taskListActions({ editTasks(TaskSection.TODO, it) }, ::blankRow, MIN_TODO),
         onAddEvent = {
+            val today = LocalDate.now(clock)
             val day = if (YearMonth.from(today) == month) today else month.atDay(1)
             editEvents { (it + EventUi(nextKey(), day.toEpochDay())).sortedByDate() }
         },
@@ -183,10 +190,10 @@ class MonthViewModel(
         private const val DIRTY_REVIEW = "REVIEW"
         private const val DIRTY_EVENTS = "EVENTS"
 
-        fun factory(container: AppContainer, month: YearMonth): ViewModelProvider.Factory =
+        fun factory(container: AppContainer, month: YearMonth, clock: Clock = container.clock): ViewModelProvider.Factory =
             object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
-                override fun <T : ViewModel> create(modelClass: Class<T>): T = MonthViewModel(container, month) as T
+                override fun <T : ViewModel> create(modelClass: Class<T>): T = MonthViewModel(container, month, clock) as T
             }
     }
 }
