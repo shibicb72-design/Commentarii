@@ -214,7 +214,6 @@ class DailyListsFlowTest : DailyPageTestBase() {
     @Test
     @Config(qualifiers = "en-rUS-w412dp-h3000dp-xxhdpi")
     fun item063_addLineTypeAndRemoveKeepsAtLeastThreeBulletRowsWithNoCheck() {
-        seedTodos("anchor")
         open(shown)
         assertEquals(3, count(hasText(rememberHint) and hasSetTextAction()))
         assertEquals("no checks here", 0, countBetween(isToggleable(), dontForgetTitle, moodTitle))

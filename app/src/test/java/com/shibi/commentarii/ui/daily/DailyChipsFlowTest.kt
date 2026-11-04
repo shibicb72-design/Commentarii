@@ -3,6 +3,7 @@ package com.shibi.commentarii.ui.daily
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
@@ -102,7 +103,6 @@ class DailyChipsFlowTest : DailyPageTestBase() {
         await { exists(hasText("Work")) }
         assertFalse("the chip changed", exists(hasText(noFolder)))
         assertEquals(listOf("Work"), folders())
-        assertEquals(folders().size, 1)
         assertEquals(runBlocking { container.pages.getFolders() }.single().id, folderIdOfPage())
     }
 
@@ -122,7 +122,7 @@ class DailyChipsFlowTest : DailyPageTestBase() {
 
         tapTab(R.string.tab_notes)
         await { exists(hasText("Work")) }
-        rule.onNode(tab(R.string.tab_notes)).assertExists()
+        rule.onNode(tab(R.string.tab_notes)).assertIsSelected()
     }
 
     @Test
@@ -195,7 +195,7 @@ class DailyChipsFlowTest : DailyPageTestBase() {
 
         addTagNamed("health")
         addTagNamed("Health")
-        // Another page's tag proves the two adds above have been processed by the time the count is read.
+        // A further tag proves the two adds above have been processed by the time the count is read.
         addTagNamed("marker")
         await { exists(hasText("marker")) }
 

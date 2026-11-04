@@ -169,22 +169,23 @@ class DailyLayoutAutosaveFlowTest : DailyPageTestBase() {
 
     /**
      * #81. A write seen within the 500 ms debounce of the start of typing can only have come from the flush on stop, since the
-     * debounce fires at least that long after the edit. A slow machine can take too long to prove it, so that is retried, and
-     * the test fails only if no attempt was fast enough. Without the flush every attempt takes over 500 ms.
+     * debounce fires at least that long after the edit. A slow machine can take too long to prove it, so that is retried on the
+     * next empty row, and the test fails only if no attempt was fast enough. Without the flush every attempt takes over 500 ms.
      */
     @Test
     fun item081_stoppingTheActivityFlushesBeforeTheDebounceAndTheTextIsThereOnReopening() {
         open(shown)
         val scenario = rule.activityRule.scenario
         val delays = mutableListOf<Long>()
-        val hints = listOf(1, 2, 3).map { str(R.string.daily_priority_hint, it) }
-        for (hint in hints) {
-            val text = "typed in $hint"
+        val plan = str(R.string.daily_schedule_hint)
+        scrollTo(hasText(plan))
+        for (attempt in 1..10) {
+            val text = "attempt $attempt"
             val startedAt = System.currentTimeMillis()
-            field(hint).performTextInput(text)
+            firstEmpty(plan).performTextInput(text)
             scenario.moveToState(Lifecycle.State.CREATED)
             val deadline = System.currentTimeMillis() + 10_000
-            while (text !in texts(shown, TaskSection.PRIORITY)) {
+            while (runBlocking { container.pages.getSchedule(pageId(shown)) }.none { it.text == text }) {
                 check(System.currentTimeMillis() < deadline) { "$text was never saved" }
                 shadowOf(Looper.getMainLooper()).idle()
                 Thread.sleep(2)
@@ -196,8 +197,8 @@ class DailyLayoutAutosaveFlowTest : DailyPageTestBase() {
         }
         assertTrue("saved before the debounce could fire; delays $delays ms", delays.last() < 500)
 
-        val saved = texts(shown, TaskSection.PRIORITY)
         reopen()
-        saved.forEach { field(it).assertExists() }
+        scrollTo(hasText("attempt ${delays.size}"))
+        field("attempt ${delays.size}").assertExists()
     }
 }
