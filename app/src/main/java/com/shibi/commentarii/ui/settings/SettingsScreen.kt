@@ -1,5 +1,6 @@
 package com.shibi.commentarii.ui.settings
 
+import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
@@ -190,8 +191,17 @@ fun openNotificationSettings(context: Context) {
     context.startActivity(
         Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
             .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
-            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            .apply { if (!context.hasActivity()) addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) },
     )
+}
+
+private fun Context.hasActivity(): Boolean {
+    var c: Context? = this
+    while (c is ContextWrapper) {
+        if (c is Activity) return true
+        c = c.baseContext
+    }
+    return false
 }
 
 private fun Context.findFragmentActivity(): FragmentActivity? {
