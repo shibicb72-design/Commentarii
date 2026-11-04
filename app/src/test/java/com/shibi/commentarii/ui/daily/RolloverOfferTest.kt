@@ -23,6 +23,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -134,15 +135,29 @@ class RolloverOfferTest {
         assertEquals(today, lastOpened.get())
     }
 
-    @Test
-    fun item091_onlyWeekAndMonthPagesGiveNoOffer() = runBlocking {
-        val week = container.pages.getOrCreateWeekly(weekStart(yesterday).minusWeeks(1))
-        val month = container.pages.getOrCreateMonthly(YearMonth.from(today).minusMonths(1).atDay(1))
+    /** The week and month pages are dated before today and newer than any daily page, so only the type filter excludes them. */
+    private suspend fun seedWeekAndMonthPages() {
+        val week = container.pages.getOrCreateWeekly(weekStart(today))
+        val month = container.pages.getOrCreateMonthly(YearMonth.from(today).atDay(1))
+        assertTrue(week.date!! < today && month.date!! < today)
         seedPage(week.id, TaskSection.TODO, listOf("Weekly todo"))
         seedPage(week.id, TaskSection.DONT_FORGET, listOf("Weekly note"))
         seedPage(month.id, TaskSection.TODO, listOf("Monthly todo"))
-        container.pages.getOrCreateDaily(today.minusDays(5))
+    }
 
+    @Test
+    fun item091_onlyWeekAndMonthPagesGiveNoOffer() {
+        runBlocking { seedWeekAndMonthPages() }
+        assertNull(openToday().rollover.value)
+        assertEquals(today, lastOpened.get())
+    }
+
+    @Test
+    fun item091_weekAndMonthItemsWithAnOlderBlankDailyPageGiveNoOffer() {
+        runBlocking {
+            seedWeekAndMonthPages()
+            container.pages.getOrCreateDaily(today.minusDays(5))
+        }
         assertNull(openToday().rollover.value)
         assertEquals(today, lastOpened.get())
     }

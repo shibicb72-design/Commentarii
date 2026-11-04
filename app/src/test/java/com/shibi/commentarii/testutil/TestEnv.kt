@@ -21,7 +21,9 @@ import org.junit.rules.TemporaryFolder
 
 /**
  * The data layer without an AppContainer: in-memory Room, a DataStore on its own temp file, and the repository, scheduler
- * and export/import built directly on [clock]. Its settings cannot leak, unlike the real container's. Call [close] in @After.
+ * and export/import built directly on [clock]. Its settings cannot leak, unlike the real container's. Its scheduler does share
+ * the app's one AlarmManager, and alarms are keyed by row id, so saving a schedule through [pages] can cancel or replace a real
+ * container's alarm. Don't do that next to a real container. Call [close] in @After.
  */
 class TestEnv(tmp: TemporaryFolder, val clock: Clock) {
     private val context = ApplicationProvider.getApplicationContext<Context>()

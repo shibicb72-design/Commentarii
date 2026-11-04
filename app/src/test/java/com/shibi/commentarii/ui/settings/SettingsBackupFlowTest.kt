@@ -129,12 +129,15 @@ class SettingsBackupFlowTest {
         return awaitMessage()
     }
 
-    /** A valid file from another store: page dated [date] with [text] at 14:00. No settings block (see class doc). */
+    /**
+     * A valid file from another store: page dated [date] with [text] at 14:00. No settings block (see class doc). Written through
+     * the DAO, because a repository save would reach the real container's alarms through the shared AlarmManager (see TestEnv).
+     */
     private fun backupFile(date: LocalDate, text: String = "Imported reminder"): JSONObject = runBlocking {
         val env = TestEnv(tmp, MutableClock(LocalDate.now(container.clock).atTime(9, 0))).also { envs += it }
         val page = env.pages.getOrCreateDaily(date)
         val rows = env.pages.getSchedule(page.id)
-        env.pages.saveSchedule(page.id, rows.map { if (it.minuteOfDay == 14 * 60) it.copy(text = text) else it })
+        env.db.pageDao().upsertSchedule(rows.map { if (it.minuteOfDay == 14 * 60) it.copy(text = text) else it })
         JSONObject(env.io.export()).also { it.remove("settings") }
     }
 
@@ -189,10 +192,11 @@ class SettingsBackupFlowTest {
     @Test
     fun item134_importCancelsOldAlarmsAndRegistersTheImportedOnes() {
         val oldId = seedExistingData()
-        assertEquals("commentarii://alarm/$oldId", uriOf(alarms().single()))
         val date = tomorrow.plusDays(1)
+        val file = backupFile(date)
+        assertEquals("the old alarm is still there until the import", "commentarii://alarm/$oldId", uriOf(alarms().single()))
 
-        assertEquals(SettingsMessage.IMPORT_OK, importBytes(backupFile(date).toString().toByteArray()))
+        assertEquals(SettingsMessage.IMPORT_OK, importBytes(file.toString().toByteArray()))
 
         val imported = runBlocking {
             container.pages.getSchedule(container.pages.getOrCreateDaily(date).id).first { it.minuteOfDay == 14 * 60 }
@@ -218,6 +222,7 @@ class SettingsBackupFlowTest {
         val rows = file.getJSONArray("schedule")
         val reused = (0 until rows.length()).map { rows.getJSONObject(it) }.first { it.getLong("id") == oldId }
         assertEquals("the fixture's row with the old id is blank", "", reused.getString("text"))
+        assertEquals("the old alarm is still there until the import", "commentarii://alarm/$oldId", uriOf(alarms().single()))
 
         assertEquals(SettingsMessage.IMPORT_OK, importBytes(file.toString().toByteArray()))
         assertFalse(alarms().map { uriOf(it) }.contains("commentarii://alarm/$oldId"))
