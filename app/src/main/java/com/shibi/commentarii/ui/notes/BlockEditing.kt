@@ -33,8 +33,11 @@ fun DocBlock.withText(newText: String): DocBlock {
     val maxCommon = minOf(old.length, newText.length)
     var p = 0
     while (p < maxCommon && old[p] == newText[p]) p++
+    // Two emoji can share one UTF-16 unit; never let the changed range start or end inside a surrogate pair.
+    if (p > 0 && old[p - 1].isHighSurrogate()) p--
     var s = 0
     while (s < maxCommon - p && old[old.length - 1 - s] == newText[newText.length - 1 - s]) s++
+    if (s > 0 && old[old.length - s].isLowSurrogate()) s--
     val oldChangedEnd = old.length - s
     val newChangedEnd = newText.length - s
     val delta = newText.length - old.length
