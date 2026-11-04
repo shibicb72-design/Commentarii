@@ -438,7 +438,8 @@ class MonthPageFlowTest : PeriodPageTestBase() {
         tapDateOf("Trip")
         pickInOpenDialog(LocalDate.of(2031, 4, 5))
         await { events().map { it.text } == listOf("Party", "Trip") }
-        assertEquals("sorted after this month's own dates", "Apr 5", dateShownBeside("Trip"))
+        assertEquals("Apr 5", dateShownBeside("Trip"))
+        assertTrue("sorted after this month's own dates", bounds(field("Party")).top < bounds(field("Trip")).top)
         titleText(title).assertExists()
 
         // Saved on this page, shown again after leaving, and not moved to April's page.

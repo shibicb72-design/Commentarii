@@ -175,6 +175,13 @@ class WeekPageFlowTest : PeriodPageTestBase() {
         val addButtons = rule.onAllNodes(hasText(addItem)).fetchSemanticsNodes().map { it.positionInRoot.y }
         assertTrue("no Add item among the goals: $addButtons", addButtons.none { it in goalsTop..weekTop })
 
+        // Round: a ticked check fills a 22 dp disc in the middle of its 40 dp target, and that disc leaves its square's corners empty.
+        checkOf(field("Goal 1")).performClick()
+        settleAnimations()
+        val check = checkOf(field("Goal 1"))
+        assertSameColor("top of the disc", colors.primary, pixel(check, 20f, 10f))
+        assertSameColor("corner of the disc's square", appColors.card, pixel(check, 10.5f, 10.5f))
+
         // Control: that search does see the same button one card further down.
         scrollTo(hasText(todoTitle))
         assertTrue(exists(hasText(addItem)))
