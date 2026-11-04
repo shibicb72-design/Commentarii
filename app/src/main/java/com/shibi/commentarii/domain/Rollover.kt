@@ -30,8 +30,8 @@ fun computeRollover(
 
 /**
  * Copies the offered items whose id is in [selectedIds] to today's daily page (priorities stay priorities while
- * fewer than [MAX_PRIORITIES] exist there, otherwise go to TODO; TODO stays TODO) and marks the originals
- * as carried to [today] (text kept, done=false).
+ * fewer than [MAX_PRIORITIES] non-blank ones exist there, taking a blank row if there is one, otherwise go to TODO;
+ * TODO stays TODO) and marks the originals as carried to [today] (text kept, done=false).
  */
 suspend fun applyRollover(
     repo: PageRepository,
@@ -46,7 +46,10 @@ suspend fun applyRollover(
     val todos = repo.getTasks(todayPage.id, TaskSection.TODO).toMutableList()
     for (item in selected) {
         val copy = TaskItemEntity(pageId = todayPage.id, section = "", position = 0, text = item.text)
-        if (item.section == TaskSection.PRIORITY && priorities.size < MAX_PRIORITIES) {
+        val blankRow = priorities.indexOfFirst { it.text.isBlank() }
+        if (item.section == TaskSection.PRIORITY && blankRow >= 0) {
+            priorities[blankRow] = priorities[blankRow].copy(text = item.text, done = false)
+        } else if (item.section == TaskSection.PRIORITY && priorities.size < MAX_PRIORITIES) {
             priorities += copy.copy(section = TaskSection.PRIORITY)
         } else {
             todos += copy.copy(section = TaskSection.TODO)
