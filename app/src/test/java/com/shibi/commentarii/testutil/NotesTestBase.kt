@@ -157,6 +157,13 @@ abstract class NotesTestBase : DailyPageTestBase() {
         rule.waitForIdle()
     }
 
+    /** Hardware Backspace wherever the cursor already is, for checks that it stayed put after the last one. */
+    @OptIn(ExperimentalTestApi::class)
+    protected fun pressBackspace(index: Int) {
+        block(index).performKeyInput { pressKey(Key.Backspace) }
+        rule.waitForIdle()
+    }
+
     protected fun tapToolbarText(text: String) {
         rule.onNode(hasText(text)).performClick()
         rule.waitForIdle()

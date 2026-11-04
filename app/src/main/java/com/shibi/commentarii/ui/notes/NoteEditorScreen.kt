@@ -342,24 +342,23 @@ private fun BlockRow(
             },
         )
     }
-    if (listLike) {
-        FirstLineRow(
-            fieldStyle,
-            leading = {
+    // One call site for every block type. A field leaving composition blurs, and the blur hands back its last value: after
+    // Enter on an empty list item that value still holds the newline, which would then split the new paragraph.
+    FirstLineRow(
+        fieldStyle,
+        leading = if (listLike) {
+            {
                 if (b.type == BlockType.BULLET) {
                     Text("•", style = fieldStyle)
                 } else {
                     Checkbox(checked = b.checked, onCheckedChange = { actions.onToggleChecked(item.key) })
                 }
-            },
-            modifier = Modifier.padding(bottom = 4.dp),
-            content = field,
-        )
-    } else {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
-            field(Modifier.padding(vertical = 6.dp))
-        }
-    }
+            }
+        } else {
+            null
+        },
+        modifier = if (listLike) Modifier.padding(bottom = 4.dp) else Modifier,
+    ) { pos -> field(if (listLike) pos else Modifier.padding(vertical = 6.dp)) }
 }
 
 internal const val FORMAT_TOOLBAR_TAG = "format_toolbar"
