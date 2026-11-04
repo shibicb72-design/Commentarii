@@ -2,6 +2,7 @@ package com.shibi.commentarii.ui
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -275,10 +276,10 @@ internal fun AppBottomBar(current: Tab?, onTab: (Tab) -> Unit) {
     }
 }
 
-/** Navigation rail shown on Medium/Expanded width. */
+/** Navigation rail shown on Medium/Expanded width. The Scaffold's padding already keeps it clear of the system bars. */
 @Composable
 private fun AppRail(current: Tab?, onTab: (Tab) -> Unit) {
-    NavigationRail {
+    NavigationRail(windowInsets = WindowInsets(0, 0, 0, 0)) {
         Tab.entries.forEach { tab ->
             NavigationRailItem(
                 selected = tab == current,
@@ -294,7 +295,7 @@ private fun AppRail(current: Tab?, onTab: (Tab) -> Unit) {
  * Scaffold body: applies the Scaffold [padding] (status bar on top, bottom bar + nav bar below) and
  * marks it consumed for [content], so a screen's imePadding() only adds the part of the keyboard that
  * the bottom bar does not already cover. Without it the editor's format toolbar floats a bar-height
- * above the IME. The [rail] stays outside the consumed area so its own insets are unchanged.
+ * above the IME. The [rail] takes the same padding and sits outside the consumed area.
  * [consumeInsets] = false is the old layout, kept only for ImeGapTest; production uses the default.
  */
 @Composable
