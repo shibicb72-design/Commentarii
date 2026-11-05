@@ -640,6 +640,14 @@ class SettingsAppFlowTest : MainActivityTestBase() {
         assertTrue("after the import $state", exists(shown) && !exists(gone))
     }
 
+    /** Checklist #310: the import's snackbar is on screen with its message and offers no Undo. */
+    @Test
+    fun item310_theImportSnackbarOffersNoUndo() {
+        exportChangeAndImportBack()
+        assertTrue("the snackbar is showing", exists(importOk))
+        assertFalse(exists(hasText("Undo", ignoreCase = true)))
+    }
+
     /** Checklist #252, the data itself: the new note is gone and every day, week and month holds what the backup had. */
     @Test
     fun item252_databaseHoldsTheBackupAndTheNewNoteIsGone() {
