@@ -2,11 +2,12 @@ package com.shibi.commentarii.ui
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.Search
@@ -15,6 +16,7 @@ import androidx.compose.material.icons.filled.Today
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.ViewWeek
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -29,14 +31,15 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
-import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -133,8 +136,9 @@ fun AppNav(
         if (!restore) nav.clearBackStack(if (tab == Tab.WEEK) Routes.WEEK else Routes.MONTH)
     }
 
-    // After an unlock the previous back stack is replayed; recording starts only once that is done.
-    var restored by remember { mutableStateOf(restoreRoutes.isEmpty()) }
+    // After an unlock the previous back stack is replayed; recording starts only once that is done. Saveable because a recreate
+    // brings the back stack back by itself, and a replay on top of that would stack the screens again.
+    var restored by rememberSaveable { mutableStateOf(restoreRoutes.isEmpty()) }
     LaunchedEffect(Unit) {
         if (!restored) {
             NavRestore.plan(restoreRoutes).forEach { step ->
@@ -261,6 +265,17 @@ fun AppNav(
 }
 
 /** Route with its arguments filled in (e.g. `daily/2026-10-18`), or null for entries without a destination route. */
+/** One line that shrinks to fit its tab: at the largest font sizes the tabs are narrower than their words. */
+@Composable
+private fun TabLabel(tab: Tab) {
+    Text(
+        stringResource(tab.label),
+        maxLines = 1,
+        softWrap = false,
+        autoSize = TextAutoSize.StepBased(minFontSize = 5.sp, maxFontSize = LocalTextStyle.current.fontSize),
+    )
+}
+
 /** Bottom navigation bar shown on Compact width. */
 @Composable
 internal fun AppBottomBar(current: Tab?, onTab: (Tab) -> Unit) {
@@ -270,7 +285,7 @@ internal fun AppBottomBar(current: Tab?, onTab: (Tab) -> Unit) {
                 selected = tab == current,
                 onClick = { onTab(tab) },
                 icon = { Icon(tab.icon, contentDescription = null) },
-                label = { Text(stringResource(tab.label)) },
+                label = { TabLabel(tab) },
             )
         }
     }
@@ -285,7 +300,7 @@ private fun AppRail(current: Tab?, onTab: (Tab) -> Unit) {
                 selected = tab == current,
                 onClick = { onTab(tab) },
                 icon = { Icon(tab.icon, contentDescription = null) },
-                label = { Text(stringResource(tab.label)) },
+                label = { TabLabel(tab) },
             )
         }
     }

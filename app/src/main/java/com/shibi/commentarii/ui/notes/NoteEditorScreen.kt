@@ -57,6 +57,8 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextRange
@@ -67,6 +69,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
@@ -251,9 +254,9 @@ private fun OrganizeSummary(state: NoteEditorUiState, onClick: () -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         if (folder != null) {
-            AssistChip(onClick = onClick, label = { Text(folder.name) })
+            AssistChip(onClick = onClick, label = { Text(folder.name, maxLines = 1, overflow = TextOverflow.Ellipsis) })
         }
-        tags.forEach { tag -> AssistChip(onClick = onClick, label = { Text("#${tag.name}") }) }
+        tags.forEach { tag -> AssistChip(onClick = onClick, label = { Text("#${tag.name}", maxLines = 1, overflow = TextOverflow.Ellipsis) }) }
         if (folder == null && tags.isEmpty()) {
             AssistChip(onClick = onClick, label = { Text(stringResource(R.string.ed_add_folder_tag)) })
         }
@@ -380,10 +383,12 @@ private fun FormatToolbar(actions: NoteEditorActions) {
             IconButton(onClick = actions.onBold) {
                 Icon(Icons.Filled.FormatBold, contentDescription = stringResource(R.string.ed_bold))
             }
-            TextButton(onClick = { actions.onSetType(BlockType.H1) }) {
+            val h1 = stringResource(R.string.ed_h1)
+            TextButton(onClick = { actions.onSetType(BlockType.H1) }, modifier = Modifier.semantics { contentDescription = h1 }) {
                 Text("H1", color = colors.onTab, fontWeight = FontWeight.Bold)
             }
-            TextButton(onClick = { actions.onSetType(BlockType.H2) }) {
+            val h2 = stringResource(R.string.ed_h2)
+            TextButton(onClick = { actions.onSetType(BlockType.H2) }, modifier = Modifier.semantics { contentDescription = h2 }) {
                 Text("H2", color = colors.onTab, fontWeight = FontWeight.Bold)
             }
             IconButton(onClick = { actions.onSetType(BlockType.BULLET) }) {
@@ -423,7 +428,7 @@ private fun OrganizeDialog(state: NoteEditorUiState, actions: NoteEditorActions,
                         FilterChip(
                             selected = state.folderId == f.id,
                             onClick = { actions.onSetFolder(f.id) },
-                            label = { Text(f.name) },
+                            label = { Text(f.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                             colors = chipColors,
                         )
                     }
@@ -438,7 +443,7 @@ private fun OrganizeDialog(state: NoteEditorUiState, actions: NoteEditorActions,
                         FilterChip(
                             selected = t.id in state.tagIds,
                             onClick = { actions.onToggleTag(t.id) },
-                            label = { Text("#${t.name}") },
+                            label = { Text("#${t.name}", maxLines = 1, overflow = TextOverflow.Ellipsis) },
                             colors = chipColors,
                         )
                     }

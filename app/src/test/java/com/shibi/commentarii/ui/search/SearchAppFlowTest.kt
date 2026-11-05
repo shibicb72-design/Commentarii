@@ -318,7 +318,8 @@ class SearchAppFlowTest : PeriodPageTestBase() {
             await { routes.lastOrNull() == Routes.daily(day) }
             // The header names the day without a year, so the route above and the typed word on the page say which day it is.
             await { exists(hasText("Wednesday, Mar 12")) }
-            field(word).assertExists()
+            // The header shows before the page has loaded its fields, so scroll to the word on every try.
+            await { runCatching { field(word).assertExists() }.isSuccess }
             assertFalse("left the search screen", exists(hasText(prompt)))
 
             pressBackInApp()

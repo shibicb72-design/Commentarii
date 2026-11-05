@@ -796,7 +796,7 @@ class SettingsAppFlowTest : MainActivityTestBase() {
     /**
      * Checklist #275, a note-behaviour item: scroll the page part way, set the reminder switch off and Dark on, rotate. What
      * happens, as observed: the switch and radio states come back from the store, the page is still Settings, and the scroll position
-     * is NOT kept (back at the top, 0 of the new maximum), (the cause was not investigated).
+     * is kept (the same offset, of the new maximum).
      */
     @Test
     fun item275_rotatingKeepsTheSwitchesAndReportsTheScrollPosition() {
@@ -822,6 +822,7 @@ class SettingsAppFlowTest : MainActivityTestBase() {
         println("item275: scroll before rotation $before of $beforeMax, after $after of $afterMax")
         assertTrue("the relayout is real: the page is taller in landscape ($beforeMax -> $afterMax)", afterMax != beforeMax)
         assertTrue("still on the Settings tab", tabSelected(R.string.tab_settings))
-        assertEquals("note behaviour: the scroll position is not kept, the page is back at the top", 0f, after, 0.5f)
+        // It used to go back to the top, as a side effect of the back stack being replayed on top of the restored one (#285).
+        assertEquals("note behaviour: the scroll position is kept", before, after, 0.5f)
     }
 }
