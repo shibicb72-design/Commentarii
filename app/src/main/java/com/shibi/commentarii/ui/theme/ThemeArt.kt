@@ -84,6 +84,8 @@ class ArtColors(
     val paper: Color,
     val decoAlpha: Float,
     val cardEdge: Color? = null,
+    /** Top colour of the Cloud Drift sky gradient (the bottom is the scheme background); null on other themes. */
+    val sky: Color? = null,
 )
 
 @Immutable
@@ -110,13 +112,13 @@ private fun art(
     titleFont: FontFamily, coloring: TitleColoring, titleTrail: Glyph, label: LabelStyle, labelTrail: Glyph,
     bullets: List<Glyph>, check: Glyph, paper: Paper, tape: Boolean,
     accents: List<Int>, ink: Int, title: List<Int>, outline: Int?, paperHex: Int, darkBg: Int,
-    edge: Int? = null,
+    edge: Int? = null, skyLight: Int? = null, skyDark: Int? = null,
 ): ThemeArt {
     val inkC = rgb(ink)
     val bgD = rgb(darkBg)
     return ThemeArt(
         titleFont, coloring, titleTrail, label, ArtFonts.PatrickHand, labelTrail, bullets, check, paper, tape, 0,
-        light = ArtColors(accents.map(::rgb), inkC, title.map(::rgb), outline?.let(::rgb), rgb(paperHex), 1f, edge?.let(::rgb)),
+        light = ArtColors(accents.map(::rgb), inkC, title.map(::rgb), outline?.let(::rgb), rgb(paperHex), 1f, edge?.let(::rgb), skyLight?.let(::rgb)),
         dark = ArtColors(
             accents = accents.map { lerp(rgb(it), bgD, 0.60f) },
             ink = lerp(Color.White, inkC, 0.06f),
@@ -125,6 +127,7 @@ private fun art(
             paper = lerp(rgb(paperHex), bgD, 0.5f),
             decoAlpha = 0.6f,
             cardEdge = edge?.let { lerp(rgb(it), bgD, 0.55f) },
+            sky = skyDark?.let(::rgb),
         ),
     )
 }
@@ -147,7 +150,7 @@ private val arts: Map<String, ThemeArt> by lazy {
             ArtFonts.Pacifico, TitleColoring.PER_LETTER, Glyph.SPARKLE, LabelStyle.PILL, Glyph.SPARKLE,
             listOf(Glyph.CLOUD), Glyph.CLOUD, Paper.NONE, false,
             listOf(0xCFE5F8, 0xE3DAF6, 0xFDE1E6, 0xD8F1E4, 0xFFF1C7), 0x1F2A36,
-            listOf(0x3F6E9E, 0x7A5BB0, 0xB0527A), null, 0xDCEEFC, 0x141C26,
+            listOf(0x3F6E9E, 0x7A5BB0, 0xB0527A), null, 0xDCEEFC, 0x141C26, skyLight = 0xDCEEFC, skyDark = 0x1C3048,
         ),
         "petal_fall" to art(
             ArtFonts.Pacifico, TitleColoring.PER_WORD, Glyph.FLOWER, LabelStyle.SWASH, Glyph.FLOWER,
@@ -182,8 +185,7 @@ fun themeArt(id: String): ThemeArt? = arts[id]
 /** Art + colours for the active theme and light/dark mode, or null on Rose & Cream. */
 @Composable
 fun currentArt(): Pair<ThemeArt, ArtColors>? {
-    val id = LocalAppTheme.current.id
-    val art = remember(id) { themeArt(id) } ?: return null
+    val art = LocalAppTheme.current.art ?: return null
     val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     return remember(art, dark) { art to (if (dark) art.dark else art.light) }
 }

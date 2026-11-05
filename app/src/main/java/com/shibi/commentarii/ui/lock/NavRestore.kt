@@ -1,6 +1,7 @@
 package com.shibi.commentarii.ui.lock
 
 import com.shibi.commentarii.ui.Routes
+import com.shibi.commentarii.ui.theme.AppThemes
 import java.time.LocalDate
 import java.time.YearMonth
 
@@ -30,6 +31,7 @@ object NavRestore {
         route.startsWith("week/") -> runCatching { LocalDate.parse(route.removePrefix("week/")) }.isSuccess
         route.startsWith("month/") -> runCatching { YearMonth.parse(route.removePrefix("month/")) }.isSuccess
         route.startsWith("note/") -> route.removePrefix("note/").toLongOrNull() != null
+        route.startsWith(Routes.THEME_CUSTOMIZE_PREFIX) -> route.removePrefix(Routes.THEME_CUSTOMIZE_PREFIX).let { id -> AppThemes.all.any { it.id == id } }
         else -> false
     }
 }

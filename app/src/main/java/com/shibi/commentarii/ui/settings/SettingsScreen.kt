@@ -29,6 +29,8 @@ import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import com.shibi.commentarii.ui.theme.AppTheme
+import com.shibi.commentarii.ui.theme.ThemeOverrideCodec
+import com.shibi.commentarii.ui.theme.customized
 import com.shibi.commentarii.ui.theme.AppThemes
 import com.shibi.commentarii.ui.theme.systemAnimationsEnabled
 import androidx.compose.foundation.layout.Column
@@ -79,7 +81,12 @@ private const val LICENSE_ASSET = "licenses/DancingScript-OFL.txt"
 
 /** Settings wired to [SettingsViewModel]: SAF launchers, import confirmation and snackbar. */
 @Composable
-fun SettingsScreen(container: AppContainer, modifier: Modifier = Modifier, onOpenDebug: () -> Unit = {}) {
+fun SettingsScreen(
+    container: AppContainer,
+    modifier: Modifier = Modifier,
+    onOpenDebug: () -> Unit = {},
+    onOpenThemeCustomize: (String) -> Unit = {},
+) {
     val context = LocalContext.current
     val licenseText = remember {
         runCatching { context.assets.open(LICENSE_ASSET).bufferedReader().use { it.readText() } }.getOrDefault("")
@@ -125,6 +132,7 @@ fun SettingsScreen(container: AppContainer, modifier: Modifier = Modifier, onOpe
             onOpenBatterySettings = { context.startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)) },
             onSendTestReminder = vm::sendTestReminder,
             onOpenDebug = onOpenDebug,
+            onThemeCustomize = onOpenThemeCustomize,
             onRequestExactAlarm = {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     context.startActivity(
@@ -326,13 +334,17 @@ fun SettingsContent(state: SettingsUiState, callbacks: SettingsCallbacks, modifi
                     DarkMode.SYSTEM -> isSystemInDarkTheme()
                 }
                 AppThemes.all.forEach { theme ->
+                    val json = state.themeOverrides[theme.id]
+                    val effective = remember(theme, json) { theme.customized(ThemeOverrideCodec.decode(json)) }
                     ThemeRow(
-                        theme = theme,
+                        theme = effective,
                         dark = dark,
                         selected = state.themeId == theme.id,
                         animatedOn = theme.id !in state.staticThemeIds,
+                        customized = effective !== theme,
                         onSelect = { callbacks.onThemeSelect(theme.id) },
                         onAnimated = { on -> callbacks.onThemeAnimated(theme.id, on) },
+                        onCustomize = { callbacks.onThemeCustomize(theme.id) },
                     )
                 }
             }
@@ -368,16 +380,17 @@ private fun modeLabel(m: DarkMode): Int = when (m) {
     DarkMode.DARK -> R.string.settings_theme_dark
 }
 
-/** One picker entry; animated themes also get their own Animated/Off choice (no global switch). */
-@OptIn(ExperimentalMaterial3Api::class)
+/** One picker entry; animated themes also get their own Animated/Off choice (no global switch). Customize is a sibling of the selectable row, so that row's merged semantics stay as they were. */
 @Composable
 private fun ThemeRow(
     theme: AppTheme,
     dark: Boolean,
     selected: Boolean,
     animatedOn: Boolean,
+    customized: Boolean,
     onSelect: () -> Unit,
     onAnimated: (Boolean) -> Unit,
+    onCustomize: () -> Unit,
 ) {
     Column(Modifier.fillMaxWidth()) {
         Row(
@@ -393,27 +406,43 @@ private fun ThemeRow(
                 Text(stringResource(theme.descriptionRes), style = MaterialTheme.typography.bodySmall)
             }
         }
-        if (theme.animated) {
-            SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(start = 48.dp, bottom = 4.dp)) {
-                SegmentedButton(
-                    selected = animatedOn,
-                    onClick = { onAnimated(true) },
-                    shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
-                ) { Text(stringResource(R.string.settings_theme_animated)) }
-                SegmentedButton(
-                    selected = !animatedOn,
-                    onClick = { onAnimated(false) },
-                    shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
-                ) { Text(stringResource(R.string.settings_theme_static)) }
-            }
-            if (!systemAnimationsEnabled()) {
-                Text(
-                    stringResource(R.string.settings_theme_system_anim_off),
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(start = 48.dp, bottom = 4.dp),
-                )
+        if (theme.animated) ThemeAnimatedChoice(animatedOn, onAnimated, Modifier.padding(start = 48.dp, bottom = 4.dp))
+        val customizeDescription = stringResource(R.string.theme_customize_open_desc, stringResource(theme.nameRes))
+        Row(Modifier.padding(start = 48.dp), verticalAlignment = Alignment.CenterVertically) {
+            TextButton(
+                onClick = onCustomize,
+                colors = ButtonDefaults.textButtonColors(contentColor = LocalContentColor.current),
+                modifier = Modifier.semantics { contentDescription = customizeDescription },
+            ) { Text(stringResource(R.string.theme_customize_open)) }
+            if (customized) {
+                Text(stringResource(R.string.theme_customize_tag), style = MaterialTheme.typography.bodySmall)
             }
         }
+    }
+}
+
+/** A theme's own Animated/Off choice, with the note shown when the system has animations off. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun ThemeAnimatedChoice(animatedOn: Boolean, onAnimated: (Boolean) -> Unit, modifier: Modifier = Modifier) {
+    SingleChoiceSegmentedButtonRow(modifier.fillMaxWidth()) {
+        SegmentedButton(
+            selected = animatedOn,
+            onClick = { onAnimated(true) },
+            shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
+        ) { Text(stringResource(R.string.settings_theme_animated)) }
+        SegmentedButton(
+            selected = !animatedOn,
+            onClick = { onAnimated(false) },
+            shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
+        ) { Text(stringResource(R.string.settings_theme_static)) }
+    }
+    if (!systemAnimationsEnabled()) {
+        Text(
+            stringResource(R.string.settings_theme_system_anim_off),
+            style = MaterialTheme.typography.bodySmall,
+            modifier = modifier,
+        )
     }
 }
 

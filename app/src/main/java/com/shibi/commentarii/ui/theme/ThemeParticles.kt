@@ -17,7 +17,7 @@ import kotlin.math.sin
 fun interface SceneFrame { fun DrawScope.draw(timeSec: Float) }
 
 /** Builds the [SceneFrame] for a page size so positions stay size-relative and paths are built once. */
-fun interface ThemeScene { fun build(size: Size, density: Density, dark: Boolean): SceneFrame }
+fun interface ThemeScene { fun build(size: Size, density: Density, dark: Boolean, art: ThemeArt): SceneFrame }
 
 /** Hard cap of particles per screen across all systems of a scene. */
 const val MAX_PARTICLES = 40

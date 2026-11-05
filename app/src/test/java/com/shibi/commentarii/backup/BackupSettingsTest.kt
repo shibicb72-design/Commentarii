@@ -106,6 +106,33 @@ class BackupSettingsTest {
     }
 
     @Test
+    fun themeOverridesAreNeverExportedAndImportLeavesThemAlone() = runBlocking {
+        val source = newEnv()
+        source.settings.setThemeOverride("petal_fall", """{"v":1,"l.bg":"FFF4F0FB"}""")
+        val json = source.io.export()
+        assertFalse("override leaked into the file", json.contains("theme_override") || json.contains("F4F0FB"))
+        assertTrue(JSONObject(json).getJSONObject("settings").keys().asSequence().none { it.contains("override", ignoreCase = true) })
+
+        val target = newEnv()
+        target.settings.setThemeOverride("washi_planner", """{"v":1,"d.bg":"FF112233"}""")
+        target.io.import(json)
+        assertEquals(mapOf("washi_planner" to """{"v":1,"d.bg":"FF112233"}"""), target.settings.themeOverrides.first())
+    }
+
+    @Test
+    fun tamperedBackupCannotSetThemeOverrides() = runBlocking {
+        val root = JSONObject(exportWithLock(false))
+        root.getJSONObject("settings")
+            .put("theme_override_petal_fall", """{"v":1,"l.bg":"FFF4F0FB"}""")
+            .put("themeOverrides", JSONObject().put("petal_fall", """{"v":1}"""))
+        root.put("theme_override_petal_fall", """{"v":1}""")
+
+        val target = newEnv()
+        target.io.import(root.toString())
+        assertEquals(emptyMap<String, String>(), target.settings.themeOverrides.first())
+    }
+
+    @Test
     fun item257_importRebuildsTheSearchIndexFromTheFile() = runBlocking {
         val source = newEnv()
         val note = source.pages.createNote("Imported title")

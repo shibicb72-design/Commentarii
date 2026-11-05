@@ -1,5 +1,7 @@
 package com.shibi.commentarii.ui.lock
 
+import com.shibi.commentarii.ui.Routes
+import com.shibi.commentarii.ui.theme.AppThemes
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -55,5 +57,44 @@ class NavRestoreTest {
     fun malformedWeekAndMonthRoutesAreDropped() {
         val routes = listOf("week/", "week/nope", "week/{mondayDate}", "month/2026-13", "month/2026-1", "month/{yearMonth}", "month/")
         assertEquals(emptyList<String>(), NavRestore.sanitize(routes))
+    }
+
+    @Test
+    fun themeCustomizeRouteIsKeptForEveryThemeInOrder() {
+        val ids = listOf("rose_cream", "washi_planner", "sunny_journal", "cloud_drift", "petal_fall", "floating_hearts", "matcha_tea", "lavender_moon")
+        assertEquals("the list covers every theme, in the app's order", AppThemes.all.map { it.id }, ids)
+        val routes = ids.map { Routes.themeCustomize(it) }
+        assertEquals(ids.map { "settings/theme/$it" }, routes)
+        assertEquals(routes, NavRestore.sanitize(routes))
+        assertEquals(routes, NavRestore.decode(NavRestore.encode(routes)))
+    }
+
+    @Test
+    fun themeCustomizeRouteRestoresOnTopOfSettings() {
+        val routes = listOf("daily/2026-10-18", "settings", "settings/theme/petal_fall")
+        assertEquals(routes, NavRestore.decode(NavRestore.encode(routes)))
+        assertEquals(
+            listOf(RestoreStep("daily/2026-10-18", true), RestoreStep("settings", false), RestoreStep("settings/theme/petal_fall", false)),
+            NavRestore.plan(routes),
+        )
+    }
+
+    @Test
+    fun themeCustomizeRouteWithAnUnknownOrEmptyIdIsDropped() {
+        val bad = listOf(
+            "settings/theme/",
+            "settings/theme",
+            "settings/theme/nope",
+            "settings/theme/{id}",
+            "settings/theme/ROSE_CREAM",
+            "settings/theme/rose_cream/extra",
+            "settings/theme/rose_cream ",
+        )
+        assertEquals(emptyList<String>(), NavRestore.sanitize(bad))
+        assertEquals(
+            "only the bad ones go",
+            listOf("settings", "settings/theme/washi_planner"),
+            NavRestore.sanitize(listOf("settings", "settings/theme/nope", "settings/theme/washi_planner", "settings/theme/")),
+        )
     }
 }

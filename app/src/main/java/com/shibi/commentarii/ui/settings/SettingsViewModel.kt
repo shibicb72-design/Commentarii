@@ -42,7 +42,7 @@ class SettingsViewModel(
         )
     }
 
-    private val theme = combine(settings.themeId, settings.staticThemeIds, ::Pair)
+    private val theme = combine(settings.themeId, settings.staticThemeIds, settings.themeOverrides, ::Triple)
 
     private val batteryUnrestricted = MutableStateFlow(true)
 
@@ -50,10 +50,10 @@ class SettingsViewModel(
         Triple(e, b, n)
     }
 
-    val state: StateFlow<SettingsUiState> = combine(base, message, status, theme) { s, m, (e, b, n), (themeId, staticIds) ->
+    val state: StateFlow<SettingsUiState> = combine(base, message, status, theme) { s, m, (e, b, n), (themeId, staticIds, overrides) ->
         s.copy(
             message = m, exactAlarmGranted = e, batteryUnrestricted = b, notificationsBlocked = n,
-            themeId = themeId, staticThemeIds = staticIds,
+            themeId = themeId, staticThemeIds = staticIds, themeOverrides = overrides,
         )
     }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SettingsUiState(licenseText = licenseText))

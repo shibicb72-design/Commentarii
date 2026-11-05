@@ -69,8 +69,7 @@ private val LavenderDark by lazy {
  * 16..110dp and scaled by widthScale (1..1.25) so S24 Ultra and Z Fold cover/inner both hold.
  * Anchors sit in the bottom 22% / side gutters; scatter outside [avoid] is vivid, inside it stays at <= 0.16.
  */
-private class Scene(size: Size, val density: Density, val dark: Boolean, id: String) {
-    val art = checkNotNull(themeArt(id))
+private class Scene(size: Size, val density: Density, val dark: Boolean, id: String, val art: ThemeArt) {
     val c: ArtColors = if (dark) art.dark else art.light
     val acc: List<Color> = c.accents
     val w = size.width
@@ -126,8 +125,8 @@ private val SunOrange = Color(0xFFFFB86B)
 private val Mint = Color(0xFF9ED9C3)
 
 // ---- washi_planner: white dotted page, dashed mint border, bear + sticky note, plant, strips, confetti ----
-private val WashiDeco = ThemeDecoration { size, density, dark ->
-    val s = Scene(size, density, dark, "washi_planner")
+private val WashiDeco = ThemeDecoration { size, density, dark, art, _ ->
+    val s = Scene(size, density, dark, "washi_planner", art)
     DecorationFrame {
         with(s) {
             paperLayer()
@@ -152,8 +151,8 @@ private val WashiDeco = ThemeDecoration { size, density, dark ->
 }
 
 // ---- sunny_journal: cream speckled paper, smiling sun + cloud, taped note, sprigs, cozy bottom row ----
-private val SunnyDeco = ThemeDecoration { size, density, dark ->
-    val s = Scene(size, density, dark, "sunny_journal")
+private val SunnyDeco = ThemeDecoration { size, density, dark, art, _ ->
+    val s = Scene(size, density, dark, "sunny_journal", art)
     DecorationFrame {
         with(s) {
             paperLayer()
@@ -186,8 +185,8 @@ private val SunnyDeco = ThemeDecoration { size, density, dark ->
 }
 
 // ---- matcha_tea: ruled paper, tea set bottom corners, bamboo edge, tea leaves, gingham strips ----
-private val MatchaDeco = ThemeDecoration { size, density, dark ->
-    val s = Scene(size, density, dark, "matcha_tea")
+private val MatchaDeco = ThemeDecoration { size, density, dark, art, _ ->
+    val s = Scene(size, density, dark, "matcha_tea", art)
     DecorationFrame {
         with(s) {
             paperLayer(marginColor = acc[3])
@@ -231,8 +230,8 @@ private val GutterSparkles = listOf(
     0.94f to 0.64f, 0.07f to 0.62f, 0.95f to 0.89f, 0.04f to 0.88f, 0.11f to 0.46f,
 )
 
-private val LavenderDeco = ThemeDecoration { size, density, dark ->
-    val s = Scene(size, density, dark, "lavender_moon")
+private val LavenderDeco = ThemeDecoration { size, density, dark, art, _ ->
+    val s = Scene(size, density, dark, "lavender_moon", art)
     val dots = PathEffect.dashPathEffect(floatArrayOf(density.density * 3f, density.density * 5f))
     DecorationFrame {
         with(s) {

@@ -17,5 +17,6 @@ fun SettingsRepository.resetToDefaults() = runBlocking {
     setLockEnabled(false)
     setNotificationsAsked(false)
     setThemeId(DEFAULT_THEME_ID)
+    clearThemeOverrides()
     setDarkMode(DarkMode.SYSTEM)
 }
