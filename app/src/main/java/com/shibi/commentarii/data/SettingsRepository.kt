@@ -10,11 +10,15 @@ import androidx.datastore.preferences.core.stringSetPreferencesKey
 import java.time.Instant
 import java.time.LocalDate
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 enum class DarkMode { SYSTEM, LIGHT, DARK }
 
 const val DEFAULT_THEME_ID = "rose_cream"
+
+private const val THEME_OVERRIDE_PREFIX = "theme_override_"
 
 class SettingsRepository(private val store: DataStore<Preferences>) {
 
@@ -53,6 +57,37 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         store.edit {
             val current = it[Keys.staticThemeIds] ?: emptySet()
             it[Keys.staticThemeIds] = if (animated) current - id else current + id
+        }
+    }
+
+    /** Raw per-theme override JSON by theme id; absent means stock. Parsing lives in ui/theme/ThemeOverride.kt. */
+    val themeOverrides: Flow<Map<String, String>> = store.data.map { p ->
+        p.asMap().mapNotNull { (k, v) ->
+            if (k.name.startsWith(THEME_OVERRIDE_PREFIX) && v is String) k.name.removePrefix(THEME_OVERRIDE_PREFIX) to v else null
+        }.toMap()
+    }.distinctUntilChanged()
+
+    /** Null or blank [json] removes the override. */
+    suspend fun setThemeOverride(id: String, json: String?) {
+        val key = stringPreferencesKey(THEME_OVERRIDE_PREFIX + id)
+        store.edit { if (json.isNullOrBlank()) it.remove(key) else it[key] = json }
+    }
+
+    /** Back to stock in one write: drops the override and puts the theme back to Animated. */
+    suspend fun resetThemeCustomization(id: String) {
+        val key = stringPreferencesKey(THEME_OVERRIDE_PREFIX + id)
+        store.edit {
+            it.remove(key)
+            val current = it[Keys.staticThemeIds] ?: emptySet()
+            if (id in current) it[Keys.staticThemeIds] = current - id
+        }
+    }
+
+    /** Removes every theme override (used by test resets). No write when there are none. */
+    suspend fun clearThemeOverrides() {
+        if (store.data.first().asMap().keys.none { it.name.startsWith(THEME_OVERRIDE_PREFIX) }) return
+        store.edit { p ->
+            p.asMap().keys.filter { it.name.startsWith(THEME_OVERRIDE_PREFIX) }.forEach { p.remove(stringPreferencesKey(it.name)) }
         }
     }
 
