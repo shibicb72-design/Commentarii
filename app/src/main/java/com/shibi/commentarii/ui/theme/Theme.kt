@@ -271,16 +271,44 @@ data class Palette(
     val title: List<Long>,
 )
 
-/** [color] moved toward [toward] just far enough to read at 4.5:1 on [surface]; a dialog's text buttons are primary on its surface. */
-private fun readableOn(surface: Color, color: Color, toward: Color): Color {
+/** [color] moved toward [toward] just far enough to read at [min] on [surface]; a dialog's text buttons are primary on its surface. */
+internal fun readableOn(surface: Color, color: Color, toward: Color, min: Float = 4.55f): Color {
     fun ratio(c: Color): Float {
         val a = c.luminance() + 0.05f
         val b = surface.luminance() + 0.05f
         return maxOf(a, b) / minOf(a, b)
     }
+    if (ratio(color) >= min) return color // lerp goes through Oklab, which can shift a channel even at fraction 0
     var fraction = 0f
-    while (fraction < 1f && ratio(lerp(color, toward, fraction)) < 4.55f) fraction += 0.01f
+    while (fraction < 1f && ratio(lerp(color, toward, fraction)) < min) fraction += 0.01f
     return lerp(color, toward, fraction.coerceAtMost(1f))
+}
+
+/**
+ * The surface group of a palette theme, derived from [bg] and [onBg] alone. Shared by [paletteMode] and the user-override
+ * resolver so stock and patched themes use one formula. [palette] also sets `secondary` (Rose & Cream keeps its own).
+ */
+internal fun ColorScheme.withSurfaceGroup(bg: Color, onBg: Color, palette: Boolean): ColorScheme {
+    fun mix(f: Float) = lerp(bg, onBg, f)
+    val onSurfaceVariant = lerp(onBg, bg, 0.25f)
+    return copy(
+        secondary = if (palette) onSurfaceVariant else secondary,
+        background = bg,
+        onBackground = onBg,
+        surface = bg,
+        onSurface = onBg,
+        surfaceVariant = mix(0.07f),
+        onSurfaceVariant = onSurfaceVariant,
+        inverseSurface = onBg,
+        inverseOnSurface = bg,
+        outline = lerp(onBg, bg, 0.45f),
+        surfaceBright = bg,
+        surfaceDim = bg,
+        surfaceContainerLow = mix(0.03f),
+        surfaceContainer = mix(0.05f),
+        surfaceContainerHigh = mix(0.08f),
+        surfaceContainerHighest = mix(0.11f),
+    )
 }
 
 /** Builds a full [ThemeMode] from a [Palette]; error and mood roles stay the Rose & Cream values. */
@@ -294,39 +322,21 @@ fun paletteMode(p: Palette, dark: Boolean): ThemeMode {
     val tabs = p.tabs.map { Color(it) }
     val base = if (dark) DarkScheme else LightScheme
     val baseExtras = if (dark) DarkExtras else LightExtras
-    fun mix(f: Float) = lerp(bg, onBg, f)
-    val onSurfaceVariant = lerp(onBg, bg, 0.25f)
-    val scheme = base.copy(
+    val scheme = base.withSurfaceGroup(bg, onBg, palette = true).copy(
         primary = primary,
         onPrimary = onPrimary,
         primaryContainer = tabs[0],
         onPrimaryContainer = onTab,
-        secondary = onSurfaceVariant,
         secondaryContainer = tabs[1 % tabs.size],
         onSecondaryContainer = onTab,
         tertiary = primary,
         onTertiary = onPrimary,
         tertiaryContainer = tabs[2 % tabs.size],
         onTertiaryContainer = onTab,
-        background = bg,
-        onBackground = onBg,
-        surface = bg,
-        onSurface = onBg,
-        surfaceVariant = mix(0.07f),
-        onSurfaceVariant = onSurfaceVariant,
         surfaceTint = primary,
-        inverseSurface = onBg,
-        inverseOnSurface = bg,
         inversePrimary = primary,
-        outline = lerp(onBg, bg, 0.45f),
         outlineVariant = Color(p.outlineVariant),
-        surfaceBright = bg,
-        surfaceDim = bg,
         surfaceContainerLowest = card,
-        surfaceContainerLow = mix(0.03f),
-        surfaceContainer = mix(0.05f),
-        surfaceContainerHigh = mix(0.08f),
-        surfaceContainerHighest = mix(0.11f),
     )
     val extras = CommentariiColors(
         tab = tabs[0],

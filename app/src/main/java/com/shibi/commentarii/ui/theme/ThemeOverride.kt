@@ -8,7 +8,7 @@ enum class ThemeFont { PATRICK_HAND, PACIFICO, SNIGLET, DANCING }
 /**
  * A theme's user edits as a flat string map (docs/plans/theme-customize-plan.md section 3.4). Per-mode keys carry an
  * `l.` or `d.` prefix. Known keys are validated on the way in and bad entries dropped alone; unknown keys are kept so a
- * rewrite does not lose data from a newer app. Not applied to any theme yet (S1 is model and storage only).
+ * rewrite does not lose data from a newer app. Applied to a theme by [customized].
  */
 class ThemeOverride private constructor(val entries: Map<String, String>) {
 
@@ -43,10 +43,10 @@ object ThemeOverrideCodec {
     private const val MAX_INDEX = 7
     private const val MOOD_COUNT = 5
 
-    private val colorBases = setOf("bg", "onBg", "primary", "onPrimary", "card", "outlineVariant", "onTab", "ink", "outline", "paper", "cardEdge")
+    private val colorBases = setOf("bg", "onBg", "primary", "onPrimary", "card", "outlineVariant", "onTab", "ink", "outline", "paper", "cardEdge", "sky")
     private val indexedColorBases = mapOf(
         "tab" to MAX_INDEX, "accent" to MAX_INDEX, "title" to MAX_INDEX,
-        // Mood tints and their number colours: round-trip only in S1, no contrast rule yet.
+        // Mood tints apply; a stored onMood round-trips but the resolver derives the number colour.
         "mood" to MOOD_COUNT - 1, "onMood" to MOOD_COUNT - 1,
     )
     private val floatBases = setOf("decoAlpha")

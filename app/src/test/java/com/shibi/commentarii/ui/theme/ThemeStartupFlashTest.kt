@@ -14,6 +14,7 @@ import com.shibi.commentarii.testutil.resetToDefaults
 import com.shibi.commentarii.testutil.runWithLooper
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -103,5 +104,33 @@ class ThemeStartupFlashTest {
         runWithLooper { container.settings.resetToDefaults() }
         val first = draw(launchHeld()).getPixel(1, 1)
         assertEquals("first frame", hex(AppThemes.Default.light.scheme.background.toArgb()), hex(first))
+    }
+
+    /** One write on top of the setup's: repeated writes to one store trip a Windows host IOException. Returns the colour the page should be. */
+    private fun storeDarkBgOverride(): String {
+        val o = ThemeOverride.Empty.withColor("d.bg", 0xFF12304A)
+        runWithLooper { container.settings.setThemeOverride("lavender_moon", ThemeOverrideCodec.encode(o)) }
+        val edited = hex(0xFF12304A.toInt())
+        assertEquals("the resolver accepts this bg", edited, hex(lavender.customized(o).dark.scheme.background.toArgb()))
+        assertNotEquals("the override differs from stock", hex(lavender.dark.scheme.background.toArgb()), edited)
+        return edited
+    }
+
+    /** Trap 7: a saved override is on the very first frame, read before setContent like the theme id, not stock until the stores answer. */
+    @Test
+    fun aSavedOverrideIsOnTheVeryFirstFrame() {
+        val edited = storeDarkBgOverride()
+        val first = draw(launchHeld()).getPixel(1, 1)
+        assertEquals("first frame", edited, hex(first))
+    }
+
+    /** Trap 7, control: the frames after the first stay on the override, so nothing changes once the stores answer. */
+    @Test
+    fun theWindowStaysOnTheSavedOverrideAfterTheStoresAnswer() {
+        val edited = storeDarkBgOverride()
+        val activity = launchHeld()
+        assertEquals("first frame", edited, hex(draw(activity).getPixel(1, 1)))
+        rule.mainClock.advanceTimeByFrame()
+        assertEquals("next frame", edited, hex(draw(activity).getPixel(1, 1)))
     }
 }

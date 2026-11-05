@@ -19,7 +19,7 @@ import org.robolectric.annotation.GraphicsMode
 
 /** Trap 4: the Cloud Drift sky gradient is built from the scheme bg + ArtColors.sky, so edits can reach the page. */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34])
+@Config(sdk = [35])
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class CloudDriftSkyTest {
     private val cloud = AppThemes.all.first { it.id == "cloud_drift" }

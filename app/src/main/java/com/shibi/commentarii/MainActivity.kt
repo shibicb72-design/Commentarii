@@ -33,6 +33,8 @@ import com.shibi.commentarii.ui.lock.UnlockAction
 import com.shibi.commentarii.ui.lock.unlockAction
 import com.shibi.commentarii.ui.theme.AppThemes
 import com.shibi.commentarii.ui.theme.CommentariiTheme
+import com.shibi.commentarii.ui.theme.ThemeOverrideCodec
+import com.shibi.commentarii.ui.theme.customized
 import java.time.LocalDate
 import java.time.YearMonth
 import kotlinx.coroutines.flow.first
@@ -61,6 +63,7 @@ class MainActivity : AppCompatActivity() {
         val savedLock = runBlocking { container.settings.lockEnabled.first() }
         val savedTheme = runBlocking { container.settings.themeId.first() }
         val savedStatic = runBlocking { container.settings.staticThemeIds.first() }
+        val savedOverrides = runBlocking { container.settings.themeOverrides.first() }
         setContent {
             val darkMode by container.settings.darkMode.collectAsStateWithLifecycle(savedDarkMode)
             val dark = when (darkMode) {
@@ -71,7 +74,10 @@ class MainActivity : AppCompatActivity() {
             val lockEnabled by container.settings.lockEnabled.collectAsStateWithLifecycle(savedLock)
             val themeId by container.settings.themeId.collectAsStateWithLifecycle(savedTheme)
             val staticThemeIds by container.settings.staticThemeIds.collectAsStateWithLifecycle(savedStatic)
-            val appTheme = AppThemes.byId(themeId)
+            val overrides by container.settings.themeOverrides.collectAsStateWithLifecycle(savedOverrides)
+            val appTheme = remember(themeId, overrides[themeId]) {
+                AppThemes.byId(themeId).customized(ThemeOverrideCodec.decode(overrides[themeId]))
+            }
             val locked by container.lock.locked.collectAsStateWithLifecycle()
             val askNotifications by container.notificationPermissionRequest.collectAsStateWithLifecycle()
             val showLock = lockEnabled && locked
