@@ -14,6 +14,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -29,8 +30,6 @@ import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
 
-private val DayFormat = DateTimeFormatter.ofPattern("EEE", Locale.getDefault())
-
 /** The seven days; each shows up to three priorities and the to-do progress and opens that day's page. */
 @Composable
 fun WeekDaysCard(days: List<WeekDayUi>, today: LocalDate, onOpenDay: (LocalDate) -> Unit, modifier: Modifier = Modifier) {
@@ -43,6 +42,7 @@ fun WeekDaysCard(days: List<WeekDayUi>, today: LocalDate, onOpenDay: (LocalDate)
 
 @Composable
 private fun WeekDayRow(day: WeekDayUi, isToday: Boolean, onOpenDay: (LocalDate) -> Unit) {
+    val dayFormat = remember { DateTimeFormatter.ofPattern("EEE", Locale.getDefault()) }
     val container = if (isToday) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainer
     val content = if (isToday) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
     Surface(
@@ -55,7 +55,7 @@ private fun WeekDayRow(day: WeekDayUi, isToday: Boolean, onOpenDay: (LocalDate) 
     ) {
         Row(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.Top) {
             Column(Modifier.width(52.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(day.date.format(DayFormat), style = MaterialTheme.typography.labelLarge)
+                Text(day.date.format(dayFormat), style = MaterialTheme.typography.labelLarge)
                 Text(
                     day.date.dayOfMonth.toString(),
                     style = MaterialTheme.typography.titleMedium,

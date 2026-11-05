@@ -1,5 +1,7 @@
 package com.shibi.commentarii.ui
 
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
@@ -83,6 +85,21 @@ class TalkbackLabelsFlowTest : NotesTestBase() {
         rule.onNodeWithTag(FORMAT_TOOLBAR_TAG).assertExists()
 
         assertAnnounced(str(R.string.ed_bold), str(R.string.ed_h1), str(R.string.ed_h2), str(R.string.ed_bullet), str(R.string.ed_checkbox))
+    }
+
+    /** Checklist #306, Settings: the page has no control TalkBack would read without a name, its switches included. */
+    @Test
+    fun item306_everyControlOnSettingsHasALabel() {
+        openApp()
+        tapTab(R.string.tab_settings)
+        await { exists(hasText(str(R.string.settings_section_backup))) }
+        val controls = rule.onAllNodes(hasClickAction()).fetchSemanticsNodes()
+        assertTrue("anchor: the page's controls were read, ${controls.size}", controls.size > 15)
+        val unnamed = controls.filter { node ->
+            node.config.getOrElse(SemanticsProperties.Text) { emptyList() }.isEmpty() &&
+                node.config.getOrElse(SemanticsProperties.ContentDescription) { emptyList() }.isEmpty()
+        }.map { node -> "${node.config.getOrNull(SemanticsProperties.Role) ?: "no role"} at ${node.boundsInRoot}" }
+        assertEquals("controls with nothing to announce", emptyList<String>(), unnamed)
     }
 
     /** Checklist #306, Search's clear button, present once there is text. */

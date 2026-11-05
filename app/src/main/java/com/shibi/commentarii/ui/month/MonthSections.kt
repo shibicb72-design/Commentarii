@@ -49,8 +49,6 @@ import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
 
-private val EventDateFormat = DateTimeFormatter.ofPattern("MMM d", Locale.getDefault())
-private val CellDateFormat = DateTimeFormatter.ofPattern("MMMM d", Locale.getDefault())
 
 /** Container and on-container colour of a day square: each tint comes with the colour of the number drawn on it. */
 @Composable
@@ -108,7 +106,8 @@ private fun DayCell(day: MonthDayUi, isToday: Boolean, onOpenDay: (LocalDate) ->
     val (container, content) = moodColors(day.mood)
     val moodLabel = day.mood?.let(::moodFace)?.let { stringResource(it.second) }
     val entries = if (day.hasContent) stringResource(R.string.month_day_has_entries) else null
-    val description = listOfNotNull(day.date.format(CellDateFormat), moodLabel, entries).joinToString(", ")
+    val cellDateFormat = remember { DateTimeFormatter.ofPattern("MMMM d", Locale.getDefault()) }
+    val description = listOfNotNull(day.date.format(cellDateFormat), moodLabel, entries).joinToString(", ")
     Surface(
         onClick = { onOpenDay(day.date) },
         shape = RoundedCornerShape(10.dp),
@@ -148,6 +147,7 @@ fun EventsCard(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
 ) {
+    val eventDateFormat = remember { DateTimeFormatter.ofPattern("MMM d", Locale.getDefault()) }
     SectionCard(stringResource(R.string.section_events), modifier) {
         events.forEach { event ->
             key(event.key) {
@@ -159,7 +159,7 @@ fun EventsCard(
                     placeholder = stringResource(R.string.event_hint),
                     enabled = enabled,
                     leading = {
-                        TextButton(onClick = { picking = true }, enabled = enabled) { Text(date.format(EventDateFormat)) }
+                        TextButton(onClick = { picking = true }, enabled = enabled) { Text(date.format(eventDateFormat)) }
                     },
                     trailing = {
                         SmallIconButton(
