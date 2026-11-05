@@ -168,6 +168,7 @@ art.outline=none
 art.paper=FFE4DEEA
 art.decoAlpha=1.0
 art.cardEdge=none
+art.sky=none
 mode dark titleBrush=false
 scheme.Background=FF221E26
 scheme.Error=FFF2B8B5
@@ -228,6 +229,7 @@ art.outline=none
 art.paper=FF7C7781
 art.decoAlpha=0.6
 art.cardEdge=none
+art.sky=none
 theme sunny_journal header=PLAIN animated=false period=0 phase=0.0 time=0.0 deco=true scene=false titleFont=Sniglet
 art.titleFont=Sniglet coloring=PER_LETTER_OUTLINED titleTrail=HEART label=SWASH labelFont=PatrickHand labelTrail=HEART bullets=HEART,STAR,FLOWER check=FLOWER paper=SPECKLE tape=true salt=0
 mode light titleBrush=false
@@ -290,6 +292,7 @@ art.outline=FF33291F
 art.paper=FFC9B89A
 art.decoAlpha=1.0
 art.cardEdge=FFD9C9A8
+art.sky=none
 mode dark titleBrush=false
 scheme.Background=FF24201A
 scheme.Error=FFF2B8B5
@@ -350,6 +353,7 @@ art.outline=FFF1F1F0
 art.paper=FF716756
 art.decoAlpha=0.6
 art.cardEdge=FF6F6655
+art.sky=none
 theme cloud_drift header=PLAIN animated=true period=0 phase=0.0 time=7.5 deco=true scene=true titleFont=Pacifico
 art.titleFont=Pacifico coloring=PER_LETTER titleTrail=SPARKLE label=PILL labelFont=PatrickHand labelTrail=SPARKLE bullets=CLOUD check=CLOUD paper=NONE tape=false salt=0
 mode light titleBrush=false
@@ -412,6 +416,7 @@ art.outline=none
 art.paper=FFDCEEFC
 art.decoAlpha=1.0
 art.cardEdge=none
+art.sky=FFDCEEFC
 mode dark titleBrush=false
 scheme.Background=FF182230
 scheme.Error=FFF2B8B5
@@ -472,6 +477,7 @@ art.outline=none
 art.paper=FF6F7C89
 art.decoAlpha=0.6
 art.cardEdge=none
+art.sky=FF1C3048
 theme petal_fall header=PLAIN animated=true period=0 phase=0.0 time=4.2 deco=true scene=true titleFont=Pacifico
 art.titleFont=Pacifico coloring=PER_WORD titleTrail=FLOWER label=SWASH labelFont=PatrickHand labelTrail=FLOWER bullets=FLOWER check=FLOWER paper=SPECKLE tape=false salt=0
 mode light titleBrush=false
@@ -534,6 +540,7 @@ art.outline=none
 art.paper=FFF2D6DC
 art.decoAlpha=1.0
 art.cardEdge=none
+art.sky=none
 mode dark titleBrush=false
 scheme.Background=FF231A1C
 scheme.Error=FFF2B8B5
@@ -594,6 +601,7 @@ art.outline=none
 art.paper=FF837075
 art.decoAlpha=0.6
 art.cardEdge=none
+art.sky=none
 theme floating_hearts header=PLAIN animated=true period=0 phase=0.0 time=3.0 deco=true scene=true titleFont=Pacifico
 art.titleFont=Pacifico coloring=PER_LETTER titleTrail=HEART label=PILL labelFont=PatrickHand labelTrail=HEART bullets=HEART check=HEART paper=DOT_GRID tape=false salt=0
 mode light titleBrush=false
@@ -656,6 +664,7 @@ art.outline=none
 art.paper=FFEADFF5
 art.decoAlpha=1.0
 art.cardEdge=none
+art.sky=none
 mode dark titleBrush=false
 scheme.Background=FF1F1A27
 scheme.Error=FFF2B8B5
@@ -716,6 +725,7 @@ art.outline=none
 art.paper=FF7B7386
 art.decoAlpha=0.6
 art.cardEdge=none
+art.sky=none
 theme matcha_tea header=PLAIN animated=false period=0 phase=0.0 time=0.0 deco=true scene=false titleFont=Sniglet
 art.titleFont=Sniglet coloring=PER_WORD titleTrail=LEAF label=STAMP labelFont=PatrickHand labelTrail=LEAF bullets=LEAF check=LEAF paper=LINED tape=true salt=0
 mode light titleBrush=false
@@ -778,6 +788,7 @@ art.outline=none
 art.paper=FFDDE3CC
 art.decoAlpha=1.0
 art.cardEdge=none
+art.sky=none
 mode dark titleBrush=false
 scheme.Background=FF1B2017
 scheme.Error=FFF2B8B5
@@ -838,6 +849,7 @@ art.outline=none
 art.paper=FF747A6A
 art.decoAlpha=0.6
 art.cardEdge=none
+art.sky=none
 theme lavender_moon header=PLAIN animated=false period=0 phase=0.0 time=0.0 deco=true scene=false titleFont=Pacifico
 art.titleFont=Pacifico coloring=PER_LETTER_GRADIENT titleTrail=STAR label=STAMP labelFont=PatrickHand labelTrail=STAR bullets=STAR check=STAR paper=STARS tape=false salt=0
 mode light titleBrush=false
@@ -900,6 +912,7 @@ art.outline=none
 art.paper=FFC9BEE8
 art.decoAlpha=1.0
 art.cardEdge=none
+art.sky=none
 mode dark titleBrush=false
 scheme.Background=FF16141F
 scheme.Error=FFF2B8B5
@@ -960,3 +973,4 @@ art.outline=none
 art.paper=FF68627C
 art.decoAlpha=0.6
 art.cardEdge=none
+art.sky=none

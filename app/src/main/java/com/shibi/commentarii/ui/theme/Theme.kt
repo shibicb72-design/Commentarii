@@ -190,7 +190,7 @@ enum class HeaderStyle { PLAIN, WASHI, HIGHLIGHTER, RIBBON }
 fun interface DecorationFrame { fun DrawScope.draw(phase: Float) }
 
 /** Builds the frame painter for a given page size, so positions stay size-relative. */
-fun interface ThemeDecoration { fun build(size: Size, density: Density, dark: Boolean): DecorationFrame }
+fun interface ThemeDecoration { fun build(size: Size, density: Density, dark: Boolean, art: ThemeArt, bg: Color): DecorationFrame }
 
 @Immutable
 class ThemeMode(val scheme: ColorScheme, val extras: CommentariiColors, val titleBrush: Brush?)

@@ -54,7 +54,9 @@ fun ThemeBackground(modifier: Modifier = Modifier) {
     val deco = theme.decoration
     val scene = theme.scene
     if (deco == null && scene == null) return
-    val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val art = theme.art ?: return
+    val bg = MaterialTheme.colorScheme.background
+    val dark = bg.luminance() < 0.5f
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val state by lifecycle.currentStateAsState()
     val systemOn = remember(state) { systemAnimationsEnabled() }
@@ -76,7 +78,7 @@ fun ThemeBackground(modifier: Modifier = Modifier) {
     if (deco != null) {
         Spacer(
             modifier.drawWithCache {
-                val frame = deco.build(size, this, dark)
+                val frame = deco.build(size, this, dark, art, bg)
                 onDrawBehind {
                     val phase = if (theme.periodMillis > 0 && enabled) {
                         val c = time.floatValue * 1000f / theme.periodMillis
@@ -93,7 +95,7 @@ fun ThemeBackground(modifier: Modifier = Modifier) {
     if (scene != null) {
         Spacer(
             modifier.drawWithCache {
-                val frame = scene.build(size, this, dark)
+                val frame = scene.build(size, this, dark, art)
                 onDrawBehind { with(frame) { draw(time.floatValue) } }
             },
         )

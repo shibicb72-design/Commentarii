@@ -77,8 +77,7 @@ internal fun particleCount(widthScale: Float): Int {
 }
 
 /** Shared sizing/colours for one build() pass. */
-private class AScene(size: Size, val density: Density, val dark: Boolean, id: String) {
-    val art = checkNotNull(themeArt(id))
+private class AScene(size: Size, val density: Density, val dark: Boolean, id: String, val art: ThemeArt) {
     val c: ArtColors = if (dark) art.dark else art.light
     val acc: List<Color> = c.accents
     val w = size.width
@@ -131,10 +130,9 @@ private val BirdPath: Path by lazy {
 }
 
 // ---- cloud_drift ----
-private val CloudDeco = ThemeDecoration { size, density, dark ->
-    val s = AScene(size, density, dark, "cloud_drift")
-    val top = if (dark) Color(0xFF1C3048) else Color(0xFFDCEEFC)
-    val sky = Brush.verticalGradient(listOf(top, Color(if (dark) 0xFF182230 else 0xFFF3F8FD)), 0f, size.height * 0.75f)
+private val CloudDeco = ThemeDecoration { size, density, dark, art, bg ->
+    val s = AScene(size, density, dark, "cloud_drift", art)
+    val sky = Brush.verticalGradient(listOf(checkNotNull(s.c.sky), bg), 0f, size.height * 0.75f)
     DecorationFrame {
         with(s) {
             drawRect(sky)
@@ -153,8 +151,8 @@ private val CloudDeco = ThemeDecoration { size, density, dark ->
 
 private class CloudSpec(val y: Float, val x0: Float, val size: Float, val speedPx: Float, val seed: Float, val face: Boolean, val ink: DoodleInk)
 
-private val CloudScene = ThemeScene { size, density, dark ->
-    val s = AScene(size, density, dark, "cloud_drift")
+private val CloudScene = ThemeScene { size, density, dark, art ->
+    val s = AScene(size, density, dark, "cloud_drift", art)
     val dp = s.dp
     val tone = if (dark) lerp(s.c.paper, Color.White, 0.35f) else Color.White
     // layer: count, base y band, size k, speed dp/s, alpha, sleepy face
@@ -217,8 +215,8 @@ private val CloudScene = ThemeScene { size, density, dark ->
 }
 
 // ---- petal_fall ----
-private val PetalDeco = ThemeDecoration { size, density, dark ->
-    val s = AScene(size, density, dark, "petal_fall")
+private val PetalDeco = ThemeDecoration { size, density, dark, art, _ ->
+    val s = AScene(size, density, dark, "petal_fall", art)
     val paper = PaperCache(size, density, s.art.paper, "petal_fall".hashCode())
     DecorationFrame {
         with(s) {
@@ -248,8 +246,8 @@ private val PetalDeco = ThemeDecoration { size, density, dark ->
     }
 }
 
-private val PetalScene = ThemeScene { size, density, dark ->
-    val s = AScene(size, density, dark, "petal_fall")
+private val PetalScene = ThemeScene { size, density, dark, art ->
+    val s = AScene(size, density, dark, "petal_fall", art)
     val petals = ParticleField(
         ParticleSystem(scaled(14, s.ws), 7, 26f..44f, 1, 22f, 0.9f / 6.2832f, 40f..90f, true, 0.06f, 0.12f, 24f..36f, 0.9f * s.c.decoAlpha),
         size, density, gutter = 0.2f,
@@ -288,8 +286,8 @@ private val PetalScene = ThemeScene { size, density, dark ->
 private fun blendFlip(scaleX: Float): Boolean = kotlin.math.abs(scaleX) < 0.45f
 
 // ---- floating_hearts ----
-private val HeartsDeco = ThemeDecoration { size, density, dark ->
-    val s = AScene(size, density, dark, "floating_hearts")
+private val HeartsDeco = ThemeDecoration { size, density, dark, art, _ ->
+    val s = AScene(size, density, dark, "floating_hearts", art)
     val paper = PaperCache(size, density, s.art.paper, "floating_hearts".hashCode(), 20f)
     DecorationFrame {
         with(s) {
@@ -321,8 +319,8 @@ private val HeartsDeco = ThemeDecoration { size, density, dark ->
 
 private class Orb(val x: Float, val y: Float, val r: Float, val brush: Brush, val seed: Float)
 
-private val HeartsScene = ThemeScene { size, density, dark ->
-    val s = AScene(size, density, dark, "floating_hearts")
+private val HeartsScene = ThemeScene { size, density, dark, art ->
+    val s = AScene(size, density, dark, "floating_hearts", art)
     val dp = s.dp
     val hearts = ParticleField(
         ParticleSystem(scaled(12, s.ws), 3, 18f..34f, -1, 14f, 1.4f / 6.2832f, 0f..0f, false, 0.10f, 0.25f, 14f..26f, 0.75f * s.c.decoAlpha),

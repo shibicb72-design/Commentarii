@@ -41,6 +41,7 @@ class ThemeStockGoldenTest {
         "art.paper=${a.paper.hex()}",
         "art.decoAlpha=${a.decoAlpha}",
         "art.cardEdge=${a.cardEdge.hexOrNone()}",
+        "art.sky=${a.sky.hexOrNone()}",
     )
 
     private fun dump(): String = buildString {
