@@ -212,6 +212,8 @@ class AppTheme(
     val staticPhase: Float = 0f,
     val scene: ThemeScene? = null,
     val staticTimeSec: Float = 0f,
+    /** Card/title art; defaults to the stock art for [id] (null on Rose & Cream). */
+    val art: ThemeArt? = themeArt(id),
 )
 
 val LocalAppTheme = staticCompositionLocalOf { AppThemes.Default }

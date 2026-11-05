@@ -182,8 +182,7 @@ fun themeArt(id: String): ThemeArt? = arts[id]
 /** Art + colours for the active theme and light/dark mode, or null on Rose & Cream. */
 @Composable
 fun currentArt(): Pair<ThemeArt, ArtColors>? {
-    val id = LocalAppTheme.current.id
-    val art = remember(id) { themeArt(id) } ?: return null
+    val art = LocalAppTheme.current.art ?: return null
     val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     return remember(art, dark) { art to (if (dark) art.dark else art.light) }
 }

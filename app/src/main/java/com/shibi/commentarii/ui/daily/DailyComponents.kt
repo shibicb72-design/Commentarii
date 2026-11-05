@@ -241,7 +241,7 @@ fun SectionCard(title: String, modifier: Modifier = Modifier, content: @Composab
     val tabShape = if (theme.headerStyle == HeaderStyle.RIBBON) notchedShape(notchPx) else theme.tabShape
     val highlighter = theme.headerStyle == HeaderStyle.HIGHLIGHTER
     val art = currentArt()
-    val decor = art?.let { (a, c) -> remember(theme.id, title, c) { cardDecor(theme.id, a, c, title) } }
+    val decor = art?.let { (a, c) -> remember(theme.id, theme.art, title, c) { cardDecor(theme.id, a, c, title) } }
     val cardShape = if (art != null) RoundedCornerShape(artCardRadius(art.first.labelStyle)) else theme.cardShape
     Column(modifier.fillMaxWidth()) {
         if (art != null) {
