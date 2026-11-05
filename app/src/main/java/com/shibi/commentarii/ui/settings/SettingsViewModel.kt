@@ -131,6 +131,7 @@ class SettingsViewModel(
                 val from = LocalDate.now(container.clock).minusDays(1)
                 val oldIds = container.pages.getUpcomingSchedule(from).map { it.id }
                 container.exportImport.import(json)
+                container.onDataReplacedByImport()
                 container.alarms.cancel(oldIds)
                 container.rescheduleAllAlarms("settings")
                 SettingsMessage.IMPORT_OK

@@ -20,6 +20,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.shibi.commentarii.R
+import com.shibi.commentarii.ui.common.pageViewModelKey
 import com.shibi.commentarii.ui.settings.NotificationsBlockedMessage
 import com.shibi.commentarii.ui.settings.openNotificationSettings
 import com.shibi.commentarii.ui.settings.outcomeMessageRes
@@ -43,7 +44,7 @@ fun DailyPageScreen(
     onOpenWeek: (LocalDate) -> Unit = {},
     onOpenMonth: (YearMonth) -> Unit = {},
 ) {
-    val vm: DailyViewModel = viewModel(key = "daily-$date", factory = DailyViewModel.factory(container, date))
+    val vm: DailyViewModel = viewModel(key = container.pageViewModelKey("daily-$date"), factory = DailyViewModel.factory(container, date))
     val state by vm.state.collectAsStateWithLifecycle()
     LifecycleEventEffect(Lifecycle.Event.ON_STOP) { vm.flushNow() }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { vm.refreshToday() }

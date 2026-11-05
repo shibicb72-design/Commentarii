@@ -76,6 +76,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.shibi.commentarii.AppContainer
 import com.shibi.commentarii.R
 import com.shibi.commentarii.data.BlockType
+import com.shibi.commentarii.ui.common.pageViewModelKey
 import com.shibi.commentarii.ui.components.FirstLineRow
 import com.shibi.commentarii.ui.components.checklistTextStyle
 import com.shibi.commentarii.ui.theme.AppColors
@@ -89,7 +90,7 @@ fun NoteEditorScreen(
     modifier: Modifier = Modifier,
 ) {
     val vm: NoteEditorViewModel = viewModel(
-        key = "note-$noteId",
+        key = container.pageViewModelKey("note-$noteId"),
         factory = NoteEditorViewModel.factory(container, noteId),
     )
     val state by vm.state.collectAsStateWithLifecycle()

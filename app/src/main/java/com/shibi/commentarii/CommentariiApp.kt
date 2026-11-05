@@ -73,6 +73,15 @@ class AppContainer(context: Context) {
         ContextCompat.checkSelfPermission(appContext, Manifest.permission.POST_NOTIFICATIONS) ==
         PackageManager.PERMISSION_GRANTED
 
+    private val _imports = MutableStateFlow(0)
+
+    /** How many backups have replaced the data since the app started. See [com.shibi.commentarii.ui.common.pageViewModelKey]. */
+    val imports: StateFlow<Int> = _imports.asStateFlow()
+
+    fun onDataReplacedByImport() {
+        _imports.value++
+    }
+
     /** Re-reads the notification state; the UI calls this on resume. */
     fun refreshNotificationState() {
         _notificationsBlocked.value = !areNotificationsEnabled()

@@ -10,6 +10,7 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.shibi.commentarii.AppContainer
+import com.shibi.commentarii.ui.common.pageViewModelKey
 import java.time.LocalDate
 import java.time.YearMonth
 
@@ -23,7 +24,7 @@ fun MonthPageScreen(
     windowWidthClass: WindowWidthSizeClass,
     modifier: Modifier = Modifier,
 ) {
-    val vm: MonthViewModel = viewModel(key = "month-$month", factory = MonthViewModel.factory(container, month))
+    val vm: MonthViewModel = viewModel(key = container.pageViewModelKey("month-$month"), factory = MonthViewModel.factory(container, month))
     val state by vm.state.collectAsStateWithLifecycle()
     LifecycleEventEffect(Lifecycle.Event.ON_STOP) { vm.flushNow() }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { vm.refreshToday() }

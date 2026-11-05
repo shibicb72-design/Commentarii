@@ -10,6 +10,7 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.shibi.commentarii.AppContainer
+import com.shibi.commentarii.ui.common.pageViewModelKey
 import java.time.LocalDate
 
 /** Weekly page wired to [WeekViewModel]. [monday] is the Monday of the shown week. */
@@ -22,7 +23,7 @@ fun WeekPageScreen(
     windowWidthClass: WindowWidthSizeClass,
     modifier: Modifier = Modifier,
 ) {
-    val vm: WeekViewModel = viewModel(key = "week-$monday", factory = WeekViewModel.factory(container, monday))
+    val vm: WeekViewModel = viewModel(key = container.pageViewModelKey("week-$monday"), factory = WeekViewModel.factory(container, monday))
     val state by vm.state.collectAsStateWithLifecycle()
     LifecycleEventEffect(Lifecycle.Event.ON_STOP) { vm.flushNow() }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { vm.refreshToday() }

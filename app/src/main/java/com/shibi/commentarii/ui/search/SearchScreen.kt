@@ -38,6 +38,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.shibi.commentarii.AppContainer
 import com.shibi.commentarii.R
 import com.shibi.commentarii.data.PageType
+import com.shibi.commentarii.ui.common.pageViewModelKey
 import com.shibi.commentarii.ui.theme.AppColors
 import com.shibi.commentarii.ui.theme.ThemedPage
 import java.time.LocalDate
@@ -53,7 +54,7 @@ fun SearchScreen(
     onOpenPage: (type: String, id: Long, date: LocalDate?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val vm: SearchViewModel = viewModel(factory = SearchViewModel.factory(container))
+    val vm: SearchViewModel = viewModel(key = container.pageViewModelKey("search"), factory = SearchViewModel.factory(container))
     val state by vm.state.collectAsStateWithLifecycle()
     SearchContent(state, vm::onQuery, onOpenPage, modifier)
 }

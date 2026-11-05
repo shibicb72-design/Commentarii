@@ -69,6 +69,7 @@ import com.shibi.commentarii.AppContainer
 import com.shibi.commentarii.R
 import com.shibi.commentarii.data.DarkMode
 import com.shibi.commentarii.ui.daily.SectionCard
+import java.time.ZoneId
 
 private const val LICENSE_ASSET = "licenses/DancingScript-OFL.txt"
 
@@ -294,7 +295,7 @@ fun SettingsContent(state: SettingsUiState, callbacks: SettingsCallbacks, modifi
                     if (state.lastExportAt == null) {
                         stringResource(R.string.settings_never_exported)
                     } else {
-                        stringResource(R.string.settings_last_export, state.lastExportAt.toString().take(10))
+                        stringResource(R.string.settings_last_export, state.lastExportAt.atZone(ZoneId.systemDefault()).toLocalDate().toString())
                     },
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(bottom = 8.dp),
