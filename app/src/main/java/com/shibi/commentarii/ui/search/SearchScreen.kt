@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -65,7 +66,8 @@ fun SearchContent(
     modifier: Modifier = Modifier,
 ) {
     ThemedPage(modifier.fillMaxSize()) {
-        Column(Modifier.fillMaxSize()) {
+        // The window is edge-to-edge, so adjustResize does not shrink it: without this the list runs on under the keyboard.
+        Column(Modifier.fillMaxSize().imePadding()) {
             OutlinedTextField(
                 value = state.query,
                 onValueChange = onQuery,
