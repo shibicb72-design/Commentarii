@@ -401,21 +401,26 @@ class SettingsAppFlowTest : MainActivityTestBase() {
 
     /**
      * Checklist #244, the date in the line: the line shows a stored instant's date in the device's time zone, as the suggested file
-     * name does (it uses LocalDate.now(clock)). The instant is 23:30 local time on one day and 00:30 local on the next, so that in
-     * any zone but UTC one of them falls on a different UTC day.
+     * name does (it uses LocalDate.now(clock)). The device's zone is pinned to America/Detroit, because CI runs in UTC, where a local
+     * day and a UTC day cannot be told apart: there, 23:30 on the 12th is already the 13th in UTC.
      */
     @Test
     fun item244_lastExportLineShowsTheLocalDayOfTheStoredInstant() {
-        val zone = container.zone
-        assertTrue("needs a zone other than UTC to tell the two days apart", zone.rules.getOffset(Instant.parse("2031-03-12T12:00:00Z")).totalSeconds != 0)
-        openSettings()
-        for ((local, time) in listOf(LocalDate.of(2031, 3, 12) to "23:30", LocalDate.of(2031, 3, 15) to "00:30")) {
-            val instant = local.atTime(java.time.LocalTime.parse(time)).atZone(zone).toInstant()
-            runWithLooper { container.settings.setLastExportAt(instant) }
-            await { exists(hasText("Last export", substring = true)) }
-            scrollToText(exportButton)
-            val line = rule.onNode(hasText("Last export", substring = true)).fetchSemanticsNode().config[SemanticsProperties.Text].single().text
-            assertEquals("stored $instant is $local at $time in $zone", "Last export: $local", line)
+        val savedZone = java.util.TimeZone.getDefault()
+        val zone = java.time.ZoneId.of("America/Detroit")
+        java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone(zone))
+        try {
+            openSettings()
+            for ((local, time) in listOf(LocalDate.of(2031, 3, 12) to "23:30", LocalDate.of(2031, 3, 15) to "00:30")) {
+                val instant = local.atTime(java.time.LocalTime.parse(time)).atZone(zone).toInstant()
+                runWithLooper { container.settings.setLastExportAt(instant) }
+                await { exists(hasText("Last export", substring = true)) }
+                scrollToText(exportButton)
+                val line = rule.onNode(hasText("Last export", substring = true)).fetchSemanticsNode().config[SemanticsProperties.Text].single().text
+                assertEquals("stored $instant is $local at $time in $zone", "Last export: $local", line)
+            }
+        } finally {
+            java.util.TimeZone.setDefault(savedZone)
         }
     }
 

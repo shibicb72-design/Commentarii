@@ -201,10 +201,23 @@ abstract class ThemeFlowTestBase : MainActivityTestBase() {
      * Every piece of visible text on the current page, with the contrast of its colour against the paper really drawn behind it.
      * The colour is the style's solid colour when it has one, otherwise (a gradient title) the strongest pixel in its bounds.
      * WCAG's threshold: 3.0 for large text (24sp, or 18.7sp bold), 4.5 otherwise.
+     *
+     * Content can still arrive while this measures (Today's goals load after its to-dos and push the page down), and a box from the
+     * new layout read on a picture of the old one measures whatever was there before. So the picture is only used when the same
+     * layout was seen on both sides of drawing it.
      */
     protected fun readings(where: String, barTop: Float): List<Reading> {
-        val bitmap = windowBitmap()
-        return rule.onAllNodes(hasShownText, useUnmergedTree = true).fetchSemanticsNodes().mapNotNull { node ->
+        fun nodes() = rule.onAllNodes(hasShownText, useUnmergedTree = true).fetchSemanticsNodes()
+        fun layout(of: List<SemanticsNode>) = of.map { Triple(it.config[SemanticsProperties.Text], it.positionInRoot, it.size) }
+        lateinit var nodes: List<SemanticsNode>
+        lateinit var bitmap: Bitmap
+        await {
+            val before = layout(nodes())
+            bitmap = windowBitmap()
+            nodes = nodes()
+            before == layout(nodes)
+        }
+        return nodes.mapNotNull { node ->
             val clipped = node.boundsInRoot
             val fullyVisible = clipped.width >= node.size.width - 1f && clipped.height >= node.size.height - 1f
             val hiddenByBar = node.positionInRoot.y < barTop && node.positionInRoot.y + node.size.height > barTop

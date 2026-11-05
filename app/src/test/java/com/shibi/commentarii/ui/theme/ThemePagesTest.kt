@@ -14,6 +14,7 @@ import com.shibi.commentarii.data.TaskItemEntity
 import com.shibi.commentarii.data.TaskSection
 import com.shibi.commentarii.domain.weekStart
 import com.shibi.commentarii.testutil.ThemeFlowTestBase
+import com.shibi.commentarii.testutil.runWithLooper
 import java.time.LocalDate
 import java.time.YearMonth
 import kotlinx.coroutines.runBlocking
@@ -62,6 +63,8 @@ class ThemePagesTest : ThemeFlowTestBase() {
             rule.waitUntilSearchShows("Page note")
         } else {
             await { exists(page.ready) }
+            // Today's goals load after its to-dos and push the page down.
+            if (page.label == R.string.tab_today) await { exists(hasText("Page week goal", substring = true)) && exists(hasText("Page month goal", substring = true)) }
         }
     }
 
@@ -119,6 +122,24 @@ class ThemePagesTest : ThemeFlowTestBase() {
         assertTrue("the reminder's Dismiss button was measured", dismiss.isNotEmpty())
         val failures = dismiss.filterNot { it.ok }.map { it.toString() }
         assertTrue("${failures.size} of ${dismiss.size} Dismiss buttons below 4.5:1:" + failures.joinToString(prefix = " ", separator = "; "), failures.isEmpty())
+    }
+
+    /**
+     * Checklist #262: the "notifications are blocked" banner on Today, which shows when the reminder banner does not. Its message and
+     * button are measured on the banner itself, in every theme and mode.
+     */
+    @Test
+    fun item262_todayBlockedNotificationsBannerReadable() {
+        val message = str(R.string.notif_blocked_message)
+        val button = str(R.string.notif_blocked_button)
+        runWithLooper { container.settings.setExportReminderEnabled(false) }
+        org.robolectric.Shadows.shadowOf(rule.activity.getSystemService(android.app.NotificationManager::class.java)).setNotificationsEnabled(false)
+        container.refreshNotificationState()
+        await { exists(button) }
+        val measured = collectReadings(pages[0]).filter { it.text == message.take(40) || it.text == button.take(40) }
+        assertEquals("message and button, in all ${AppThemes.all.size * 2} theme/mode combinations", AppThemes.all.size * 4, measured.size)
+        val failures = measured.filterNot { it.ok }.map { it.toString() }
+        assertTrue("${failures.size} of ${measured.size} below threshold:\n" + failures.joinToString("\n"), failures.isEmpty())
     }
 
     /**

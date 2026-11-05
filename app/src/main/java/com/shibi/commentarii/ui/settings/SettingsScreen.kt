@@ -42,6 +42,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.SnackbarHost
@@ -351,7 +353,11 @@ fun SettingsContent(state: SettingsUiState, callbacks: SettingsCallbacks, modifi
 @Composable
 fun NotificationsBlockedMessage(onOpenSettings: () -> Unit) {
     Text(stringResource(R.string.notif_blocked_message), style = MaterialTheme.typography.bodyMedium)
-    OutlinedButton(onClick = onOpenSettings, modifier = Modifier.padding(vertical = 8.dp)) {
+    OutlinedButton(
+        onClick = onOpenSettings,
+        modifier = Modifier.padding(vertical = 8.dp),
+        colors = ButtonDefaults.outlinedButtonColors(contentColor = LocalContentColor.current),
+    ) {
         Text(stringResource(R.string.notif_blocked_button))
     }
 }
