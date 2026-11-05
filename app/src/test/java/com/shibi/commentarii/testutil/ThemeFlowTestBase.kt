@@ -1,6 +1,7 @@
 package com.shibi.commentarii.testutil
 
 import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.os.Looper
 import androidx.core.view.WindowCompat
 import org.junit.Assert.assertTrue
@@ -17,6 +18,10 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.graphics.isSpecified
+import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.test.isDialog
+import androidx.compose.ui.text.TextLayoutResult
 import com.shibi.commentarii.R
 import com.shibi.commentarii.data.DarkMode
 import com.shibi.commentarii.ui.theme.AppTheme
@@ -26,6 +31,7 @@ import org.junit.After
 import org.junit.Before
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.Shadows.shadowOf
+import org.robolectric.shadows.ShadowDialog
 
 /**
  * The real MainActivity opened on the Settings page's Theme card, for the theme items. Adds to [MainActivityTestBase]: the
@@ -163,4 +169,73 @@ abstract class ThemeFlowTestBase : MainActivityTestBase() {
     }
 
     protected fun hex(argb: Int) = "#%08X".format(argb)
+
+    protected fun applyTheme(theme: AppTheme, dark: Boolean) {
+        runWithLooper {
+            container.settings.setThemeAnimated(theme.id, false)
+            container.settings.setThemeId(theme.id)
+            container.settings.setDarkMode(if (dark) DarkMode.DARK else DarkMode.LIGHT)
+        }
+        val mode = if (dark) theme.dark else theme.light
+        await { exists(tab(R.string.tab_settings)) && hex(barBackgroundPixel()) == hex(mode.scheme.surfaceContainer.toArgb()) }
+    }
+
+    protected val hasShownText = SemanticsMatcher("shows text") {
+        val config = it.config
+        SemanticsProperties.Text in config && config[SemanticsProperties.Text].any { t -> t.text.isNotBlank() }
+    }
+
+    /** One piece of text on a page, as measured. */
+    class Reading(val where: String, val text: String, val ratio: Double, val needed: Double, val detail: String) {
+        val ok get() = ratio >= needed
+        override fun toString() = "$where '$text' %.2f < %.1f ($detail)".format(ratio, needed)
+    }
+
+    protected fun layoutOf(node: SemanticsNode): TextLayoutResult? {
+        val results = mutableListOf<TextLayoutResult>()
+        node.config.getOrNull(SemanticsActions.GetTextLayoutResult)?.action?.invoke(results)
+        return results.firstOrNull()
+    }
+
+    /**
+     * Every piece of visible text on the current page, with the contrast of its colour against the paper really drawn behind it.
+     * The colour is the style's solid colour when it has one, otherwise (a gradient title) the strongest pixel in its bounds.
+     * WCAG's threshold: 3.0 for large text (24sp, or 18.7sp bold), 4.5 otherwise.
+     */
+    protected fun readings(where: String, barTop: Float): List<Reading> {
+        val bitmap = windowBitmap()
+        return rule.onAllNodes(hasShownText, useUnmergedTree = true).fetchSemanticsNodes().mapNotNull { node ->
+            val clipped = node.boundsInRoot
+            val fullyVisible = clipped.width >= node.size.width - 1f && clipped.height >= node.size.height - 1f
+            val hiddenByBar = node.positionInRoot.y < barTop && node.positionInRoot.y + node.size.height > barTop
+            if (!fullyVisible || hiddenByBar || node.size.width < 4 || node.size.height < 4) return@mapNotNull null
+            val text = node.config[SemanticsProperties.Text].joinToString(" ") { it.text }
+            val style = layoutOf(node)?.layoutInput?.style
+            val solid = style?.color?.takeIf { it.isSpecified && style.brush == null }
+            val ink = inkOf(bitmap, node, solid?.toArgb())
+            val size = style?.fontSize?.takeIf { it.isSp }?.value ?: 14f
+            val bold = (style?.fontWeight?.weight ?: 400) >= 700
+            val large = size >= 24f || (bold && size >= 18.7f)
+            val ratio = if (solid != null) contrastRatio(ink.background, solid.toArgb()) else ink.ratio
+            Reading(where, text.take(40), ratio, if (large) 3.0 else 4.5, if (solid != null) "style colour on $ink" else "pixels $ink")
+        }
+    }
+
+    /**
+     * The same measure for the open dialog, a window of its own, drawn here in software as [windowBitmap] draws the activity: each
+     * text's colour against the commonest other colour in its box, which is the paper.
+     */
+    protected fun dialogReadings(where: String): List<Reading> {
+        val view = ShadowDialog.getLatestDialog().window!!.decorView
+        val image = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
+        rule.runOnUiThread { view.draw(Canvas(image)) }
+        return rule.onAllNodes(hasShownText and hasAnyAncestor(isDialog()), useUnmergedTree = true).fetchSemanticsNodes().mapNotNull { node ->
+            val style = layoutOf(node)?.layoutInput?.style ?: return@mapNotNull null
+            val solid = style.color.takeIf { it.isSpecified && style.brush == null } ?: return@mapNotNull null
+            val paper = inkOf(image, node, solid.toArgb()).background
+            val text = node.config[SemanticsProperties.Text].joinToString(" ") { it.text }
+            val size = style.fontSize.takeIf { it.isSp }?.value ?: 14f
+            Reading(where, text.take(40), contrastRatio(paper, solid.toArgb()), if (size >= 24f) 3.0 else 4.5, "style colour on #%08X".format(paper))
+        }
+    }
 }

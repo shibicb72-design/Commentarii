@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.Density
@@ -268,11 +269,23 @@ data class Palette(
     val title: List<Long>,
 )
 
+/** [color] moved toward [toward] just far enough to read at 4.5:1 on [surface]; a dialog's text buttons are primary on its surface. */
+private fun readableOn(surface: Color, color: Color, toward: Color): Color {
+    fun ratio(c: Color): Float {
+        val a = c.luminance() + 0.05f
+        val b = surface.luminance() + 0.05f
+        return maxOf(a, b) / minOf(a, b)
+    }
+    var fraction = 0f
+    while (fraction < 1f && ratio(lerp(color, toward, fraction)) < 4.55f) fraction += 0.01f
+    return lerp(color, toward, fraction.coerceAtMost(1f))
+}
+
 /** Builds a full [ThemeMode] from a [Palette]; error and mood roles stay the Rose & Cream values. */
 fun paletteMode(p: Palette, dark: Boolean): ThemeMode {
     val bg = Color(p.bg)
     val onBg = Color(p.onBg)
-    val primary = Color(p.primary)
+    val primary = readableOn(lerp(bg, onBg, 0.08f), Color(p.primary), onBg)
     val onPrimary = Color(p.onPrimary)
     val card = Color(p.card)
     val onTab = Color(p.onTab)

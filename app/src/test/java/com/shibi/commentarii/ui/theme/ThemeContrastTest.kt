@@ -35,6 +35,32 @@ class ThemeContrastTest {
         assertTrue(failures.joinToString("\n"), failures.isEmpty())
     }
 
+    /** Checklist #283: the time picker's AM/PM, unselected on the dialog's surface and selected on tertiaryContainer (Material's defaults). */
+    @Test
+    fun item283_theTimePickersPeriodToggleReadsInEveryThemeAndMode() {
+        val failures = mutableListOf<String>()
+        for (theme in AppThemes.all) {
+            for ((name, mode) in listOf("light" to theme.light, "dark" to theme.dark)) {
+                val s = mode.scheme
+                check("${theme.id}/$name onSurfaceVariant/surfaceContainerHigh", s.onSurfaceVariant, s.surfaceContainerHigh, 4.5f, failures)
+                check("${theme.id}/$name onTertiaryContainer/tertiaryContainer", s.onTertiaryContainer, s.tertiaryContainer, 4.5f, failures)
+            }
+        }
+        assertTrue(failures.joinToString(" | "), failures.isEmpty())
+    }
+
+    /** Checklist #283: a dialog's text buttons are primary on surfaceContainerHigh, in every theme and mode. */
+    @Test
+    fun item283_dialogButtonsReadInEveryThemeAndMode() {
+        val failures = mutableListOf<String>()
+        for (theme in AppThemes.all) {
+            for ((name, mode) in listOf("light" to theme.light, "dark" to theme.dark)) {
+                check("${theme.id}/$name primary/surfaceContainerHigh", mode.scheme.primary, mode.scheme.surfaceContainerHigh, 4.5f, failures)
+            }
+        }
+        assertTrue(failures.joinToString(" | "), failures.isEmpty())
+    }
+
     @Test
     fun titleGradientStopsReadAgainstBackground() {
         val failures = mutableListOf<String>()

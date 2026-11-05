@@ -1,30 +1,19 @@
 package com.shibi.commentarii.ui.theme
 
 import android.graphics.Bitmap
-import androidx.compose.ui.semantics.SemanticsActions
-import androidx.compose.ui.semantics.getOrNull
-import androidx.compose.ui.graphics.isSpecified
-import androidx.compose.ui.semantics.SemanticsNode
-import androidx.compose.ui.semantics.SemanticsProperties
-import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
-import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.graphics.toArgb
 import com.shibi.commentarii.R
 import com.shibi.commentarii.data.BlockDocument
-import com.shibi.commentarii.data.DarkMode
 import com.shibi.commentarii.data.DocBlock
 import com.shibi.commentarii.data.SectionKind
 import com.shibi.commentarii.data.TaskItemEntity
 import com.shibi.commentarii.data.TaskSection
 import com.shibi.commentarii.domain.weekStart
 import com.shibi.commentarii.testutil.ThemeFlowTestBase
-import com.shibi.commentarii.testutil.contrastRatio
-import com.shibi.commentarii.testutil.inkOf
-import com.shibi.commentarii.testutil.runWithLooper
 import java.time.LocalDate
 import java.time.YearMonth
 import kotlinx.coroutines.runBlocking
@@ -64,16 +53,6 @@ class ThemePagesTest : ThemeFlowTestBase() {
         container.pages.saveBlockDocument(note, SectionKind.RICH_TEXT, BlockDocument(listOf(DocBlock(text = "page note body"))))
     }
 
-    private fun apply(theme: AppTheme, dark: Boolean) {
-        runWithLooper {
-            container.settings.setThemeAnimated(theme.id, false)
-            container.settings.setThemeId(theme.id)
-            container.settings.setDarkMode(if (dark) DarkMode.DARK else DarkMode.LIGHT)
-        }
-        val mode = if (dark) theme.dark else theme.light
-        await { exists(tab(R.string.tab_settings)) && hex(barBackgroundPixel()) == hex(mode.scheme.surfaceContainer.toArgb()) }
-    }
-
     private fun show(page: Page) {
         openTab(page.label)
         if (page.label == R.string.tab_search) {
@@ -94,54 +73,13 @@ class ThemePagesTest : ThemeFlowTestBase() {
         waitForIdle()
     }
 
-    private val hasShownText = SemanticsMatcher("shows text") {
-        val config = it.config
-        SemanticsProperties.Text in config && config[SemanticsProperties.Text].any { t -> t.text.isNotBlank() }
-    }
-
-    /** One piece of text on a page, as measured. */
-    class Reading(val where: String, val text: String, val ratio: Double, val needed: Double, val detail: String) {
-        val ok get() = ratio >= needed
-        override fun toString() = "$where '$text' %.2f < %.1f ($detail)".format(ratio, needed)
-    }
-
-    private fun layoutOf(node: SemanticsNode): TextLayoutResult? {
-        val results = mutableListOf<TextLayoutResult>()
-        node.config.getOrNull(SemanticsActions.GetTextLayoutResult)?.action?.invoke(results)
-        return results.firstOrNull()
-    }
-
-    /**
-     * Every piece of visible text on the current page, with the contrast of its colour against the paper really drawn behind it.
-     * The colour is the style's solid colour when it has one, otherwise (a gradient title) the strongest pixel in its bounds.
-     * WCAG's threshold: 3.0 for large text (24sp, or 18.7sp bold), 4.5 otherwise.
-     */
-    private fun readings(where: String, barTop: Float): List<Reading> {
-        val bitmap = windowBitmap()
-        return rule.onAllNodes(hasShownText, useUnmergedTree = true).fetchSemanticsNodes().mapNotNull { node ->
-            val clipped = node.boundsInRoot
-            val fullyVisible = clipped.width >= node.size.width - 1f && clipped.height >= node.size.height - 1f
-            val hiddenByBar = node.positionInRoot.y < barTop && node.positionInRoot.y + node.size.height > barTop
-            if (!fullyVisible || hiddenByBar || node.size.width < 4 || node.size.height < 4) return@mapNotNull null
-            val text = node.config[SemanticsProperties.Text].joinToString(" ") { it.text }
-            val style = layoutOf(node)?.layoutInput?.style
-            val solid = style?.color?.takeIf { it.isSpecified && style.brush == null }
-            val ink = inkOf(bitmap, node, solid?.toArgb())
-            val size = style?.fontSize?.takeIf { it.isSp }?.value ?: 14f
-            val bold = (style?.fontWeight?.weight ?: 400) >= 700
-            val large = size >= 24f || (bold && size >= 18.7f)
-            val ratio = if (solid != null) contrastRatio(ink.background, solid.toArgb()) else ink.ratio
-            Reading(where, text.take(40), ratio, if (large) 3.0 else 4.5, if (solid != null) "style colour on $ink" else "pixels $ink")
-        }
-    }
-
     private fun barTop() = boundsOf(tab(R.string.tab_settings)).top
 
     private fun collectReadings(page: Page): List<Reading> {
         seed()
         val all = mutableListOf<Reading>()
         for (theme in AppThemes.all) for (dark in listOf(false, true)) {
-            apply(theme, dark)
+            applyTheme(theme, dark)
             show(page)
             val found = readings("${theme.id}/${if (dark) "dark" else "light"}/${str(page.label)}", barTop())
             assertTrue("no text found on ${str(page.label)}", found.isNotEmpty())
@@ -194,7 +132,7 @@ class ThemePagesTest : ThemeFlowTestBase() {
             for (dark in listOf(false, true)) {
                 val shots = mutableMapOf<String, Bitmap>()
                 for (theme in AppThemes.all) {
-                    apply(theme, dark)
+                    applyTheme(theme, dark)
                     show(page)
                     val bitmap = windowBitmap()
                     val mode = if (dark) theme.dark else theme.light
