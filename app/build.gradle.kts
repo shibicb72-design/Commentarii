@@ -14,7 +14,7 @@ android {
         minSdk = 29
         targetSdk = 36
         // Fixed; bump by hand for each Play upload.
-        versionCode = 1
+        versionCode = 2
         versionName = "1.0.0"
     }
 
