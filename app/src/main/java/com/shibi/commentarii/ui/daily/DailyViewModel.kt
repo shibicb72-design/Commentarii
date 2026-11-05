@@ -272,9 +272,7 @@ class DailyViewModel(
             editSchedule { it + ScheduleRowUi(key = nextKey(), minuteOfDay = minute, isCustom = true) }
         },
         onRemoveCustomTime = { key -> editSchedule { l -> l.filterNot { it.key == key && it.isCustom } } },
-        onMood = { m ->
-            viewModelScope.launch { pages.saveMood(date, if (_state.value.mood == m) null else m) }
-        },
+        onMood = { m -> viewModelScope.launch { pages.toggleMood(date, m) } },
         onNotes = { text ->
             _state.update { it.copy(notes = text) }
             markDirty(DIRTY_NOTES)

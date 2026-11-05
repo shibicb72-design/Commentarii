@@ -213,6 +213,11 @@ class PageRepository(
         }
     }
 
+    /** Sets [mood] 1..5, or clears it if it is the one stored. Decides on the stored value: an observer can be a tap behind. */
+    suspend fun toggleMood(date: LocalDate, mood: Int) = db.withTransaction {
+        saveMood(date, if (dao.getMood(date)?.mood == mood) null else mood)
+    }
+
     suspend fun getBlockDocument(pageId: Long, kind: String): BlockDocument =
         BlockDocument.fromJson(dao.getBlocks(pageId).firstOrNull { it.kind == kind }?.payloadJson)
 
