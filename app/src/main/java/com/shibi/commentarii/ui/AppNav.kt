@@ -60,6 +60,7 @@ import com.shibi.commentarii.ui.notes.NoteEditorScreen
 import com.shibi.commentarii.ui.notes.NotesListScreen
 import com.shibi.commentarii.ui.search.SearchScreen
 import com.shibi.commentarii.ui.settings.DebugLogScreen
+import com.shibi.commentarii.ui.settings.ThemeCustomizeScreen
 import com.shibi.commentarii.ui.settings.SettingsScreen
 import com.shibi.commentarii.ui.week.WeekPageScreen
 import java.time.Clock
@@ -75,7 +76,10 @@ object Routes {
     const val SEARCH = "search"
     const val SETTINGS = "settings"
     const val DEBUG = "settings/debug"
+    const val THEME_CUSTOMIZE = "settings/theme/{id}"
+    const val THEME_CUSTOMIZE_PREFIX = "settings/theme/"
 
+    fun themeCustomize(id: String) = "$THEME_CUSTOMIZE_PREFIX$id"
     fun daily(date: LocalDate) = "daily/$date"
     fun week(date: LocalDate) = "week/${weekStart(date)}"
     fun month(month: YearMonth) = "month/$month"
@@ -98,7 +102,7 @@ private fun tabOf(route: String?): Tab? = when {
     route.startsWith("month/") -> Tab.MONTH
     route.startsWith("note") -> Tab.NOTES
     route == Routes.SEARCH -> Tab.SEARCH
-    route == Routes.SETTINGS || route == Routes.DEBUG -> Tab.SETTINGS
+    route == Routes.SETTINGS || route == Routes.DEBUG || route == Routes.THEME_CUSTOMIZE -> Tab.SETTINGS
     else -> null
 }
 
@@ -255,9 +259,24 @@ fun AppNav(
                         )
                     }
                     composable(Routes.SETTINGS) {
-                        SettingsScreen(container, onOpenDebug = { nav.navigate(Routes.DEBUG) })
+                        SettingsScreen(
+                            container,
+                            onOpenDebug = { nav.navigate(Routes.DEBUG) },
+                            onOpenThemeCustomize = { id -> nav.navigate(Routes.themeCustomize(id)) },
+                        )
                     }
                     composable(Routes.DEBUG) { DebugLogScreen(container, onBack = { nav.popBackStack() }) }
+                    composable(
+                        Routes.THEME_CUSTOMIZE,
+                        arguments = listOf(navArgument("id") { type = NavType.StringType }),
+                    ) { e ->
+                        ThemeCustomizeScreen(
+                            container,
+                            themeId = e.arguments?.getString("id"),
+                            widthClass = widthClass,
+                            onBack = { nav.popBackStack() },
+                        )
+                    }
                 }
             }
         }
@@ -334,6 +353,7 @@ private fun concreteRoute(entry: NavBackStackEntry, today: LocalDate): String? =
     Routes.WEEK -> Routes.week(parseWeekRoute(entry.arguments?.getString("mondayDate"), today))
     Routes.MONTH -> Routes.month(parseMonthRoute(entry.arguments?.getString("yearMonth"), today))
     Routes.NOTE -> entry.arguments?.getLong("id")?.let { Routes.note(it) }
+    Routes.THEME_CUSTOMIZE -> entry.arguments?.getString("id")?.let { Routes.themeCustomize(it) }
     else -> route
 }
 

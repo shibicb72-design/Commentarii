@@ -20,6 +20,8 @@ data class SettingsUiState(
     val themeId: String = AppThemes.DEFAULT_ID,
     /** Ids of animated themes the user switched to "Off"; absent means Animated. */
     val staticThemeIds: Set<String> = emptySet(),
+    /** Raw override JSON by theme id; absent means stock. */
+    val themeOverrides: Map<String, String> = emptyMap(),
     val licenseText: String = "",
     val message: SettingsMessage? = null,
 )
@@ -37,6 +39,7 @@ data class SettingsCallbacks(
     val onDarkMode: (DarkMode) -> Unit = {},
     val onThemeSelect: (String) -> Unit = {},
     val onThemeAnimated: (String, Boolean) -> Unit = { _, _ -> },
+    val onThemeCustomize: (String) -> Unit = {},
 )
 
 fun backupFileName(date: LocalDate): String = "commentarii-backup-$date.json"

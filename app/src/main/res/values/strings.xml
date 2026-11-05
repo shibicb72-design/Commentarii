@@ -160,6 +160,17 @@
     <string name="settings_theme_animated">Animated</string>
     <string name="settings_theme_static">Off</string>
     <string name="settings_theme_system_anim_off">System animations are off, so this stays still.</string>
+    <string name="theme_customize_open">Customize</string>
+    <string name="theme_customize_open_desc">Customize %1$s</string>
+    <string name="theme_customize_tag">Customized</string>
+    <string name="theme_customize_preview_desc">Preview of %1$s</string>
+    <string name="theme_customize_preview_mode">Preview in</string>
+    <string name="theme_customize_animation">Animation</string>
+    <string name="theme_customize_reset">Reset to default</string>
+    <string name="theme_customize_reset_title">Reset %1$s?</string>
+    <string name="theme_customize_reset_body">This removes your changes to this theme, in both light and dark.</string>
+    <string name="theme_customize_reset_body_animated">This removes your changes to this theme, in both light and dark, and turns its animation back on.</string>
+    <string name="theme_customize_reset_confirm">Reset</string>
     <string name="theme_rose_cream_name">Rose &amp; Cream</string>
     <string name="theme_rose_cream_desc">The original dusty-pink tabs on warm cream.</string>
     <string name="theme_washi_planner_name">Washi Planner</string>
