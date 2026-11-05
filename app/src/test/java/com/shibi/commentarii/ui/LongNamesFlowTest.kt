@@ -2,8 +2,12 @@ package com.shibi.commentarii.ui
 
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.hasAnyDescendant
+import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.performTextInput
 import com.shibi.commentarii.R
 import com.shibi.commentarii.testutil.NotesTestBase
@@ -32,37 +36,59 @@ class LongNamesFlowTest : NotesTestBase() {
 
     private fun assertOneLine(text: String) = assertEquals("\"$text\" lines", 1, layoutOf(label(text)).lineCount)
 
-    /** Checklist #299: the daily header's folder and tag chips, one line each in their sideways row, on a day filed under both. */
+    /** The right edge as laid out: boundsInRoot is clipped to the parents, which would hide just the overflow looked for here. */
+    private fun rightOf(node: SemanticsNode) = node.positionInRoot.x + node.size.width
+
+    /** The sideways scroller holding [text] really has somewhere to scroll to, which is how a chip that long stays reachable. */
+    private fun assertInASidewaysScroller(text: String) {
+        val sideways = SemanticsMatcher.keyIsDefined(SemanticsProperties.HorizontalScrollAxisRange)
+        val range = rule.onNode(sideways and hasScrollAction() and hasAnyDescendant(hasText(text))).fetchSemanticsNode()
+            .config[SemanticsProperties.HorizontalScrollAxisRange]
+        assertTrue("\"$text\" can be scrolled to: max ${range.maxValue()}", range.maxValue() > 0f)
+    }
+
+    /**
+     * Checklist #299: the daily header's folder and tag chips, one line each in their sideways row, on a day filed under both. The
+     * page below stays where it is on a day without them, in the same run.
+     */
     @Test
     fun item299_theDailyHeaderKeepsLongNamesOnOneLine() {
+        open(today)
+        val below = hasText(str(R.string.section_priorities))
+        val plainTop = rule.onNode(below).fetchSemanticsNode().positionInRoot.y
+
         val folderId = seedFolder(folder)
         runBlocking {
             val id = pageId(today)
             container.pages.moveToFolder(id, folderId)
             container.pages.addTag(id, container.pages.getOrCreateTag(tag).id)
         }
-        openApp()
+        reopen()
         await { exists(hasText(folder)) && exists(hasText(tag)) }
 
         assertOneLine(folder)
         assertOneLine(tag)
-        assertTrue("the page below is unmoved", exists(hasText(str(R.string.section_todo))))
+        assertInASidewaysScroller(folder)
+        assertEquals("the page below is unmoved", plainTop, rule.onNode(below).fetchSemanticsNode().positionInRoot.y, 1f)
     }
 
-    /** Checklist #299: the Notes filter chips and a note card, one line each. */
+    /** Checklist #299: the Notes filter chips, folder and tag, and a note card: one line each, the chips in sideways scrollers. */
     @Test
     fun item299_theNotesFiltersKeepLongNamesOnOneLine() {
         seed()
         openNotesTab()
-        await { exists(hasText("Named")) && exists(hasText(folder)) }
+        await { exists(hasText("Named")) && exists(hasText(folder)) && exists(hasText("#$tag")) }
 
-        rule.onAllNodes(hasText(folder), useUnmergedTree = true).fetchSemanticsNodes().forEach {
-            assertEquals("folder chip or card line", 1, layoutOf(it).lineCount)
+        for (text in listOf(folder, "#$tag")) {
+            rule.onAllNodes(hasText(text), useUnmergedTree = true).fetchSemanticsNodes().forEach {
+                assertEquals("\"$text\" chip or card line", 1, layoutOf(it).lineCount)
+            }
+            assertInASidewaysScroller(text)
         }
         bounds(rule.onNode(hasText("Named"))).let { assertTrue("the card fits: $it of $rootWidth", it.right <= rootWidth + 1) }
     }
 
-    /** Checklist #299: the editor's summary row: each chip one line and inside the window, as it wraps rather than scrolls. */
+    /** Checklist #299: the editor's summary row wraps rather than scrolls, so each chip is one ellipsized line and inside the window. */
     @Test
     fun item299_theEditorSummaryKeepsLongNamesOnOneLineInsideTheWindow() {
         val id = seed()
@@ -73,12 +99,12 @@ class LongNamesFlowTest : NotesTestBase() {
 
         for (text in listOf(folder, "#$tag")) {
             assertOneLine(text)
-            val box = label(text).boundsInRoot
-            assertTrue("\"$text\" at $box inside $rootWidth", box.right <= rootWidth + 1)
+            assertTrue("\"$text\" is ellipsized", layoutOf(label(text)).isLineEllipsized(0))
+            assertTrue("\"$text\" ends at ${rightOf(label(text))} inside $rootWidth", rightOf(label(text)) <= rootWidth + 1)
         }
     }
 
-    /** Checklist #299: the Folder and tags dialog, with a long name added through it: one line each, inside the dialog. */
+    /** Checklist #299: the Folder and tags dialog cannot scroll sideways, and has a long name added through it: one ellipsized line each, inside the dialog. */
     @Test
     fun item299_theOrganizeDialogKeepsLongNamesOnOneLine() {
         val id = seedNote("Named")
@@ -91,11 +117,12 @@ class LongNamesFlowTest : NotesTestBase() {
         await { exists(hasText(folder) and inDialog and !hasSetTextAction()) }
         await { exists(hasText("#$tag") and inDialog) }
 
-        val dialogRight = rule.onAllNodes(inDialog).fetchSemanticsNodes().maxOf { it.boundsInRoot.right }
+        val dialog = rule.onNode(isDialog()).fetchSemanticsNode().boundsInRoot
         for (text in listOf(folder, "#$tag")) {
             val node = rule.onAllNodes(hasText(text) and inDialog and !hasSetTextAction(), useUnmergedTree = true).fetchSemanticsNodes().first()
             assertEquals("\"$text\" lines", 1, layoutOf(node).lineCount)
-            assertTrue("inside the dialog", node.boundsInRoot.right <= dialogRight + 1)
+            assertTrue("\"$text\" is ellipsized", layoutOf(node).isLineEllipsized(0))
+            assertTrue("\"$text\" ends at ${rightOf(node)} inside the dialog at $dialog", rightOf(node) <= dialog.right + 1)
         }
         assertTrue("Done is still there", exists(hasText(str(R.string.action_done))))
     }

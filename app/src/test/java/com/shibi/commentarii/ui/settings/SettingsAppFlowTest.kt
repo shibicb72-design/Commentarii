@@ -43,6 +43,7 @@ import kotlin.math.abs
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
+import org.json.JSONTokener
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -452,7 +453,7 @@ class SettingsAppFlowTest : MainActivityTestBase() {
     /**
      * Checklist #247: the target file already holds longer junk, and a larger earlier export; exporting onto it leaves exactly the
      * new backup, which parses and contains neither. Whether Robolectric's file path honours the "wt" truncation is asserted by
-     * [item247_truncatingIsReallyExercised]; whether the mode string reaches a real provider is in SettingsExportFileModeTest.
+     * [item247_truncatingIsReallyExercised]; what "w" and "wt" do on this path is in SettingsStoreAndFileModeTest.
      */
     @Test
     fun item247_exportOntoALongerExistingFileLeavesOnlyTheNewBackup() {
@@ -460,24 +461,28 @@ class SettingsAppFlowTest : MainActivityTestBase() {
         file.writeText("JUNK-".repeat(40_000))
         val junkLength = file.length()
         seedNote("Small note", "small")
+        val big = seedNote("Big note", "x".repeat(20_000))
         openSettings()
 
         exportTo(file)
         val first = file.readText(Charsets.UTF_8)
         assertFalse("junk left behind", first.contains("JUNK"))
         assertTrue("file shorter than the junk it replaced: ${file.length()} vs $junkLength", file.length() < junkLength)
-        assertEquals(listOf("Small note"), noteTitlesIn(JSONObject(first)))
+        assertEquals(listOf("Small note", "Big note").sorted(), noteTitlesIn(JSONObject(first)).sorted())
+        assertTrue("fixture: the first export holds the long body", first.contains("xxxx"))
 
         // Second export onto the same file, from less data than the first: the tail of the first must not survive.
-        val big = seedNote("Big note", "x".repeat(20_000))
         runBlocking { container.pages.deletePage(big) }
+        // The first export's snackbar has to go, or exportTo's wait for it would pass before this export has run.
+        await { !exists(exportOk) }
         exportTo(file)
         val second = file.readText(Charsets.UTF_8)
+        assertTrue("the second export is shorter: ${second.length} vs ${first.length}", second.length < first.length)
         assertFalse(second.contains("xxxx"))
-        assertTrue(second.endsWith("}"))
-        val root = JSONObject(second)
-        assertEquals(listOf("Small note"), noteTitlesIn(root))
-        assertEquals("exactly one JSON document in the file", second.length, root.toString().length)
+        assertEquals(listOf("Small note"), noteTitlesIn(JSONObject(second)))
+        val tokens = JSONTokener(second)
+        tokens.nextValue()
+        assertEquals("nothing follows the JSON document", 0.toChar(), tokens.nextClean())
     }
 
     /** Control for the above: the junk file really was longer than the export, so an untruncated write would show it. */

@@ -6,11 +6,13 @@ import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import com.shibi.commentarii.R
 import com.shibi.commentarii.data.TaskSection
+import com.shibi.commentarii.domain.weekStart
 import com.shibi.commentarii.testutil.NotesTestBase
 import java.time.YearMonth
 import kotlinx.coroutines.flow.first
@@ -129,40 +131,90 @@ class AbsentFeaturesFlowTest : NotesTestBase() {
         rule.waitForIdle()
     }
 
-    /** Checklist #311: no page offers a delete or clear; text removed by hand leaves the page in place, on all three kinds. */
+    private fun filledTexts(pageId: Long, section: String) =
+        runBlocking { container.pages.getTasks(pageId, section) }.map { it.text }.filter { it.isNotBlank() }
+
+    /** Types into the field showing [hint], sees it saved on page [pageId], clears it by hand, sees that saved. */
+    private fun typeAndClear(hint: String, pageId: Long, section: String) {
+        val empty = hasText(hint) and hasSetTextAction()
+        scrollTo(empty)
+        rule.onNode(empty).performTextInput("By hand")
+        await { filledTexts(pageId, section) == listOf("By hand") }
+        rule.onNode(hasText("By hand") and hasSetTextAction()).performTextClearance()
+        await { filledTexts(pageId, section).isEmpty() }
+    }
+
+    /** The page is still there, looked up without creating one, and asking for that date's page gives the same id. */
+    private fun assertPageRemains(what: String, pageId: Long, currentId: () -> Long) {
+        assertNotNull("$what keeps its page", page(pageId))
+        assertEquals("$what is the same page", pageId, currentId())
+    }
+
+    /**
+     * Checklist #311: no page offers a delete or clear, top to bottom and in every string the app ships. A daily, week and month
+     * page each have a line typed and cleared by hand through the screen, and the same page remains, then and after leaving it.
+     */
     @Test
     fun item311_dailyWeekAndMonthHaveNoDeleteAndEmptiedPagesRemain() {
+        assertEquals(
+            "the only delete and clear words are the note's, the log's and the search box's",
+            setOf(R.string.action_delete, R.string.ed_delete, R.string.ed_delete_title, R.string.debug_clear, R.string.sr_clear).map { str(it) }.toSet(),
+            stringsWith("delet|clear|erase").toSet(),
+        )
+
         val pageWords = "delete|clear (this |the )?(page|day|week|month)"
         val id = seedNote("Control")
         openApp()
         val daily = pageId(today)
-        val priority = str(R.string.daily_priority_hint, 1)
-        rule.onNode(hasText(priority) and hasSetTextAction()).performTextInput("By hand")
-        await { texts(today, TaskSection.PRIORITY) == listOf("By hand") }
+        val currentDaily = { pageId(today) }
+        typeAndClear(str(R.string.daily_priority_hint, 1), daily, TaskSection.PRIORITY)
+        assertPageRemains("the emptied day", daily, currentDaily)
         assertEquals("nothing on Today", 0, on(pageWords))
-        rule.onNode(hasText("By hand") and hasSetTextAction()).performTextClearance()
-        await { texts(today, TaskSection.PRIORITY).isEmpty() }
-        assertEquals("the emptied day keeps its page", daily, pageId(today))
-        assertNotNull(page(daily))
+        scrollTo(hasText(str(R.string.daily_footer)))
+        assertEquals("nothing at the end of Today", 0, on(pageWords))
 
         tapTab(R.string.tab_week)
         await { exists(hasText(str(R.string.section_week_days))) }
         assertEquals("nothing on the week", 0, on(pageWords))
+        val currentWeek = { runBlocking { container.pages.getOrCreateWeekly(weekStart(today)).id } }
+        val week = currentWeek()
+        typeAndClear(str(R.string.goal_hint, 1), week, TaskSection.GOALS)
+        assertPageRemains("the emptied week", week, currentWeek)
+        scrollTo(hasText(str(R.string.section_review_improve)))
+        assertEquals("nothing at the end of the week", 0, on(pageWords))
 
         tapTab(R.string.tab_month)
         await { exists(hasText(str(R.string.section_calendar))) }
         assertEquals("nothing on the month", 0, on(pageWords))
-        val month = runBlocking { container.pages.getOrCreateMonthly(YearMonth.from(today).atDay(1)).id }
-        assertNotNull(page(month))
+        val currentMonth = { runBlocking { container.pages.getOrCreateMonthly(YearMonth.from(today).atDay(1)).id } }
+        val month = currentMonth()
+        // A month starts with no goal rows; the first Add item down the page is the Goals section's.
+        scrollTo(hasText(str(R.string.section_goals)))
+        val addGoal = hasText(str(R.string.daily_add_item)) and isEnabled()
+        await { exists(addGoal) }
+        rule.onAllNodes(addGoal)[0].performClick()
+        rule.waitForIdle()
+        typeAndClear(str(R.string.goal_hint, 1), month, TaskSection.GOALS)
+        assertPageRemains("the emptied month", month, currentMonth)
+        scrollTo(hasText(str(R.string.section_review)))
+        assertEquals("nothing at the end of the month", 0, on(pageWords))
 
         // Control: the same search finds the delete on a note.
         tapTab(R.string.tab_notes)
         await { exists(hasText("Control")) }
         openNote("Control", id)
         assertTrue("the search does find a delete", on(pageWords) > 0)
+
+        // All three have been left now, and leaving does not tidy an empty page away.
+        assertPageRemains("the day, after leaving it", daily, currentDaily)
+        assertPageRemains("the week, after leaving it", week, currentWeek)
+        assertPageRemains("the month, after leaving it", month, currentMonth)
     }
 
-    /** Checklist #313: Today has the five clickable faces; the note editor, week and month have none, the week only shows a day's face. */
+    /**
+     * Checklist #313: Today has the five clickable faces; the note editor and month, to its end, have none. The month shows the mood
+     * only in its day's description. The week shows one face per day and a tap on it opens the day.
+     */
     @Test
     fun item313_moodIsOnlySetOnDailyPages() {
         val faces = listOf(R.string.mood_5, R.string.mood_4, R.string.mood_3, R.string.mood_2, R.string.mood_1).map { str(it) }
@@ -184,13 +236,19 @@ class AbsentFeaturesFlowTest : NotesTestBase() {
 
         tapTab(R.string.tab_month)
         await { exists(hasText(str(R.string.section_calendar))) }
-        assertEquals("the month has no faces", 0, clickableFaces())
+        val shown = hasContentDescription(faces.first(), substring = true)
+        await { exists(shown) }
+        assertEquals("the month has no faces, only today's description", 0, clickableFaces())
+        scrollTo(hasText(str(R.string.section_review)))
+        assertEquals("nor anywhere to the end of the month", 0, clickableFaces())
+        assertEquals("nor the word", 0, on("^${Regex.escape(str(R.string.section_mood))}$"))
 
         tapTab(R.string.tab_week)
         await { exists(hasText(str(R.string.section_week_days))) }
         scrollTo(hasText(str(R.string.section_mood_week)))
-        assertTrue("the week has a single row, not a picker per day: ${clickableFaces()}", clickableFaces() <= 1)
-        val shown = hasContentDescription(faces.first(), substring = true)
+        await { clickableFaces() == 1 }
+        assertEquals("one face, today's, and no picker of five", 1, clickableFaces())
+        assertEquals("the other six days have no mood yet", 6, count(hasContentDescription(str(R.string.mood_none)) and hasClickAction()))
         rule.onAllNodes(shown)[0].performClick()
         await { routes.lastOrNull() == Routes.daily(today) }
         assertEquals("opening the day changes nothing", 5, runBlocking { container.pages.getMood(today) }?.mood)

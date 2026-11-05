@@ -245,11 +245,38 @@ class DeviceNavBackFlowTest : DeviceStateTestBase() {
                 listOf(com.shibi.commentarii.data.TaskItemEntity(pageId = day.id, section = com.shibi.commentarii.data.TaskSection.TODO, position = 0, text = "needle task")),
             )
         }
+        val farDay = today.plusYears(1)
+        val shortDate = java.time.format.DateTimeFormatter.ofPattern("MMM d")
+        val weekTitle = "Week of ${farDay.with(java.time.DayOfWeek.MONDAY).format(shortDate)} – ${farDay.with(java.time.DayOfWeek.SUNDAY).format(shortDate)}"
+        val monthTitle = farDay.format(java.time.format.DateTimeFormatter.ofPattern("MMMM yyyy"))
+        runBlocking {
+            val goals = com.shibi.commentarii.data.TaskSection.GOALS
+            suspend fun goal(pageId: Long, text: String) = container.pages.saveTasks(
+                pageId,
+                goals,
+                listOf(com.shibi.commentarii.data.TaskItemEntity(pageId = pageId, section = goals, position = 0, text = text)),
+            )
+            goal(container.pages.getOrCreateWeekly(farDay.with(java.time.DayOfWeek.MONDAY)).id, "needle week goal")
+            goal(container.pages.getOrCreateMonthly(farDay.withDayOfMonth(1)).id, "needle month goal")
+        }
         awaitToday()
         openSearch("needle")
         awaitResult(hasText("needle note"))
         val dayResult = tomorrow.format(java.time.format.DateTimeFormatter.ofLocalizedDate(java.time.format.FormatStyle.FULL))
         awaitResult(hasText(dayResult))
+
+        // Week and Month results open their pages from Search too, and Back comes to Search from them as well.
+        for ((resultTitle, onPage) in listOf(weekTitle to "needle week goal", monthTitle to "needle month goal")) {
+            awaitResult(hasText(resultTitle))
+            rule.onNode(card(resultTitle)).performClick()
+            rule.waitForIdle()
+            await { exists(hasText(onPage) and hasSetTextAction()) }
+            assertFalse("left Search for $resultTitle", onSearch())
+            back()
+            awaitResult(hasText(resultTitle))
+            assertTrue("back on Search from $resultTitle", onSearch())
+            assertTrue("with the query kept", exists(hasText("needle") and hasSetTextAction()))
+        }
 
         rule.onNode(card("needle note")).performClick()
         rule.waitForIdle()

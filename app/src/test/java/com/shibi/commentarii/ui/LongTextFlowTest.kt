@@ -10,6 +10,7 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import com.shibi.commentarii.R
+import com.shibi.commentarii.data.ScheduleEntryEntity
 import com.shibi.commentarii.data.TaskSection
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -25,7 +26,7 @@ import com.shibi.commentarii.testutil.PeriodPageTestBase
  */
 @Config(qualifiers = "en-rUS-w412dp-h2000dp-xxhdpi")
 class LongTextFlowTest : PeriodPageTestBase() {
-    private val long = (1..100).joinToString(" ") { "word" }.take(500)
+    private val long = ("word ".repeat(100).take(499) + ".").also { check(it.length == 500) }
 
     private fun overlap(a: Rect, b: Rect) = a.left < b.right - 1 && b.left < a.right - 1 && a.top < b.bottom - 1 && b.top < a.bottom - 1
 
@@ -40,11 +41,23 @@ class LongTextFlowTest : PeriodPageTestBase() {
         assertTrue("inside the window: $box of $rootWidth", box.right <= rootWidth + 1)
         val layout = layoutOf(node)
         assertTrue("wraps: ${layout.lineCount} lines", layout.lineCount >= 4)
+        assertClearOf(controls)
+    }
+
+    /** Each of [controls] is on the pasted row, on screen, and does not touch the text; a control of another row would prove nothing. */
+    private fun assertClearOf(controls: List<String>) {
+        val box = bounds(longField())
         for (control in controls) {
             val bounds = bounds(onRowOf(longField(), hasContentDescription(control)))
+            assertOnTheRow(control, bounds, box)
             assertFalse("$control at $bounds overlaps the text at $box", overlap(bounds, box))
             assertTrue("$control is on screen: $bounds of $rootWidth", bounds.left >= 0 && bounds.right <= rootWidth + 1)
         }
+    }
+
+    private fun assertOnTheRow(what: String, control: Rect, row: Rect) {
+        val middle = (control.top + control.bottom) / 2
+        assertTrue("$what at $control is on the row at $row", middle >= row.top && middle <= row.bottom)
     }
 
     private fun paste(hint: String) {
@@ -60,6 +73,7 @@ class LongTextFlowTest : PeriodPageTestBase() {
     private fun assertCheckClear() {
         val box = bounds(longField())
         val check = bounds(checkOf(longField()))
+        assertOnTheRow("the check", check, box)
         assertFalse("the check at $check overlaps the text at $box", overlap(check, box))
         assertTrue("on screen: $check", check.left >= 0)
     }
@@ -77,7 +91,7 @@ class LongTextFlowTest : PeriodPageTestBase() {
         await { texts(day, TaskSection.PRIORITY) == listOf(long) }
     }
 
-    /** Checklist #297, to-do: wraps, with its remove button and arrows clear of the text; the next row sits below it. */
+    /** Checklist #297, to-do: wraps, with its check, both arrows and its remove button clear of the text; the next row sits below it. */
     @Test
     fun item297_aTodoGrowsAndKeepsClearOfItsControls() {
         seedTasks(day, TaskSection.TODO, "First", "Last")
@@ -89,7 +103,8 @@ class LongTextFlowTest : PeriodPageTestBase() {
 
         // Into a third, empty row.
         typeInFirst(todoHint, long)
-        assertGrewClearOf(height, listOf(remove, moveUp))
+        assertGrewClearOf(height, listOf(remove, moveUp, moveDown))
+        assertCheckClear()
         await { texts(day, TaskSection.TODO) == listOf("First", "Last", long) }
 
         val box = bounds(longField())
@@ -118,13 +133,37 @@ class LongTextFlowTest : PeriodPageTestBase() {
         assertTrue(bounds(rule.onAllNodes(hasText(plan) and hasSetTextAction())[0]).top >= box.bottom - 1)
     }
 
-    /** Checklist #297, a week's goal: grows and keeps clear of its controls. */
+    /** Checklist #297, a custom-time schedule row, the only kind with an X: the Plan field wraps clear of its time and of the X. */
+    @Test
+    fun item297_aCustomScheduleRowGrowsAndKeepsClearOfItsX() {
+        val id = pageId(day)
+        runBlocking {
+            val rows = container.pages.getSchedule(id)
+            container.pages.saveSchedule(id, rows + ScheduleEntryEntity(pageId = id, date = day, minuteOfDay = 15 * 60 + 30, isCustom = true))
+        }
+        open(day)
+        val time = hasTime("3:30 PM")
+        await { runCatching { scrollTo(time) }.isSuccess }
+        val row = onRowOf(rule.onNode(time), hasText(str(R.string.daily_schedule_hint)) and hasSetTextAction())
+        val height = bounds(row).height
+        row.performTextInput(long)
+        rule.waitForIdle()
+
+        assertGrewClearOf(height, listOf(remove))
+        val timeBox = bounds(rule.onNode(time))
+        assertOnTheRow("the time", timeBox, bounds(longField()))
+        assertFalse("the time at $timeBox overlaps the text", overlap(timeBox, bounds(longField())))
+        await { runBlocking { container.pages.getSchedule(id) }.single { it.isCustom }.text == long }
+    }
+
+    /** Checklist #297, a week's goal: grows and keeps clear of its check and its X. */
     @Test
     fun item297_aWeekGoalGrowsAndKeepsClearOfItsControls() {
         openAppAt(day)
         openWeekTab()
         paste(str(R.string.goal_hint, 1))
         assertCheckClear()
+        assertClearOf(listOf(remove))
         await { textsOf(weekPageId(), TaskSection.GOALS) == listOf(long) }
     }
 
