@@ -12,9 +12,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Surface
-import androidx.compose.ui.Modifier
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.LaunchedEffect
@@ -23,7 +20,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.material3.MaterialTheme
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.shibi.commentarii.data.DarkMode
 import com.shibi.commentarii.notify.Notifications
@@ -39,6 +35,8 @@ import com.shibi.commentarii.ui.theme.AppThemes
 import com.shibi.commentarii.ui.theme.CommentariiTheme
 import java.time.LocalDate
 import java.time.YearMonth
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 
 class MainActivity : AppCompatActivity() {
     /** Date requested by a reminder notification; consumed by AppNav. */
@@ -58,22 +56,25 @@ class MainActivity : AppCompatActivity() {
         val container = (application as CommentariiApp).container
         readDate(intent)
         authAvailable = BiometricAuth.isAvailable(this)
+        // Read before the first frame, so the saved look never flashes the default and nothing shows before we know whether to lock.
+        val savedDarkMode = runBlocking { container.settings.darkMode.first() }
+        val savedLock = runBlocking { container.settings.lockEnabled.first() }
+        val savedTheme = runBlocking { container.settings.themeId.first() }
+        val savedStatic = runBlocking { container.settings.staticThemeIds.first() }
         setContent {
-            val darkMode by container.settings.darkMode.collectAsStateWithLifecycle(DarkMode.SYSTEM)
+            val darkMode by container.settings.darkMode.collectAsStateWithLifecycle(savedDarkMode)
             val dark = when (darkMode) {
                 DarkMode.SYSTEM -> isSystemInDarkTheme()
                 DarkMode.LIGHT -> false
                 DarkMode.DARK -> true
             }
-            // null until the setting has loaded, so nothing is shown before we know whether to lock.
-            val lockEnabled by container.settings.lockEnabled.collectAsStateWithLifecycle<Boolean?>(null)
-            // null until loaded, so the default theme never flashes before the saved one.
-            val themeId by container.settings.themeId.collectAsStateWithLifecycle<String?>(null)
-            val staticThemeIds by container.settings.staticThemeIds.collectAsStateWithLifecycle(emptySet())
+            val lockEnabled by container.settings.lockEnabled.collectAsStateWithLifecycle(savedLock)
+            val themeId by container.settings.themeId.collectAsStateWithLifecycle(savedTheme)
+            val staticThemeIds by container.settings.staticThemeIds.collectAsStateWithLifecycle(savedStatic)
             val appTheme = AppThemes.byId(themeId)
             val locked by container.lock.locked.collectAsStateWithLifecycle()
             val askNotifications by container.notificationPermissionRequest.collectAsStateWithLifecycle()
-            val showLock = lockEnabled == true && locked
+            val showLock = lockEnabled && locked
             // Back stack of the unlocked app, kept as route strings only (no screen is composed while locked).
             var savedRoutes by rememberSaveable { mutableStateOf("") }
             // What the Week and Month tabs last treated as current, which must outlive a lock for AppNav to spot a rollover.
@@ -89,9 +90,9 @@ class MainActivity : AppCompatActivity() {
                 enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
             }
             LaunchedEffect(lockEnabled) {
-                if (lockEnabled == true) {
+                if (lockEnabled) {
                     window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
-                } else if (lockEnabled == false) {
+                } else {
                     window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
                 }
             }
@@ -112,10 +113,6 @@ class MainActivity : AppCompatActivity() {
                 animate = appTheme.animated && appTheme.id !in staticThemeIds,
             ) {
                 when {
-                    lockEnabled == null || themeId == null -> Surface(
-                        modifier = Modifier.fillMaxSize(),
-                        color = MaterialTheme.colorScheme.background,
-                    ) {}
                     showLock -> LockScreen(
                         onUnlock = { promptUnlock(container) },
                         authAvailable = authAvailable,
